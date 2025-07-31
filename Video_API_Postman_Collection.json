@@ -1,0 +1,366 @@
+{
+  "info": {
+    "name": "Video Transformation API",
+    "description": "Complete API collection for video processing with job tracking",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "api_base",
+      "value": "{{base_url}}/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "job_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Root Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          }
+        },
+        {
+          "name": "Processing Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/stats",
+              "host": ["{{api_base}}"],
+              "path": ["stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Video Processing",
+      "item": [
+        {
+          "name": "Upload Video (1 variant)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select your video file (.mp4, .mov, .avi, etc.)"
+                },
+                {
+                  "key": "variations",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "priority",
+                  "value": "normal",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/upload",
+              "host": ["{{api_base}}"],
+              "path": ["upload"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('job_id', response.job_id);",
+                  "    console.log('Job ID saved:', response.job_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload Video (3 variants)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select your video file"
+                },
+                {
+                  "key": "variations",
+                  "value": "3",
+                  "type": "text"
+                },
+                {
+                  "key": "min_transformations",
+                  "value": "9",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/upload",
+              "host": ["{{api_base}}"],
+              "path": ["upload"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('job_id', response.job_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload Video (5 variants)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "variations",
+                  "value": "5",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/upload",
+              "host": ["{{api_base}}"],
+              "path": ["upload"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.environment.set('job_id', response.job_id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Job Management",
+      "item": [
+        {
+          "name": "Get Job Status (Simplified)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/jobs/{{job_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["jobs", "{{job_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "console.log('Job Status:', response.status);",
+                  "console.log('Progress:', response.progress + '%');",
+                  "",
+                  "if (response.status === 'completed') {",
+                  "    const variantUrls = [];",
+                  "    let i = 0;",
+                  "    while (response[`variant_${i}_url`]) {",
+                  "        variantUrls.push(response[`variant_${i}_url`]);",
+                  "        i++;",
+                  "    }",
+                  "    console.log('Variant URLs found:', variantUrls.length);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List All Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/jobs?limit=10&skip=0",
+              "host": ["{{api_base}}"],
+              "path": ["jobs"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Completed Jobs Only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/jobs?status=completed&limit=20",
+              "host": ["{{api_base}}"],
+              "path": ["jobs"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "completed"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Job Progress Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/jobs/{{job_id}}/progress",
+              "host": ["{{api_base}}"],
+              "path": ["jobs", "{{job_id}}", "progress"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Downloads",
+      "item": [
+        {
+          "name": "Get Download URLs (Detailed)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/download/{{job_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["download", "{{job_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "console.log('Variants available:', response.variants_count);",
+                  "",
+                  "response.variants?.forEach((variant, index) => {",
+                  "    console.log(`Variant ${index + 1}:`, variant.filename);",
+                  "    console.log('Transformations:', variant.applied_transformations?.length || 0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Advanced Operations",
+      "item": [
+        {
+          "name": "Cancel Job",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/cancel/{{job_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["cancel", "{{job_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Manual Process Trigger",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{api_base}}/process/{{job_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["process", "{{job_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

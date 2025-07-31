@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-07-30 15:09:23",
+  "test_type": "Advanced Metrics Test",
+  "total_variants": 0,
+  "download_links": [],
+  "test_results": [
+    {
+      "test_name": "Single Variant",
+      "success": true,
+      "job_id": "8efb7ff3-8655-48fe-a8b4-369d0d64cee9",
+      "processing_time": 0,
+      "variants_created": 0,
+      "download_links": []
+    },
+    {
+      "test_name": "3 Variants",
+      "success": true,
+      "job_id": "491604d8-bb17-4140-a0db-28beefa4d9e8",
+      "processing_time": 0,
+      "variants_created": 0,
+      "download_links": []
+    },
+    {
+      "test_name": "5 Variants",
+      "success": true,
+      "job_id": "40ab59f5-8d28-4fbf-ba3c-29cf24d0ea5f",
+      "processing_time": 0,
+      "variants_created": 0,
+      "download_links": []
+    }
+  ]
+}

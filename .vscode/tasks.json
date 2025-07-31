@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start FastAPI Server",
+			"type": "shell",
+			"command": "source venv/bin/activate && python run.py",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Start Celery Worker",
+			"type": "shell",
+			"command": "source venv/bin/activate && ./start_worker.sh",
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Test Setup",
+			"type": "shell",
+			"command": "source venv/bin/activate && python test_setup.py",
+			"group": "test",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
