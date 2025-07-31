@@ -10,6 +10,7 @@ import asyncio
 
 from .ffmpeg_service import FFmpegTransformationService
 from .s3_service import S3Service
+from .punchline_service import VideoPunchlineGenerator
 from ..database import get_database, connect_to_mongo
 from ..models import JobStatus
 
@@ -184,13 +185,60 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, min_transfor
                 update_progress(mapped_progress)
             
             try:
+                # Check if punchlines are enabled for this job
+                enable_punchlines = job.get('metadata', {}).get('enable_punchlines', False)
+                punchline_variant = job.get('metadata', {}).get('punchline_variant', 1)
+                
+                punchline_data = None
+                if enable_punchlines:
+                    try:
+                        # Initialize punchline generator
+                        punchline_generator = VideoPunchlineGenerator()
+                        if punchline_generator.is_available():
+                            logging.info(f"Generating punchlines for variant {variant_index + 1}")
+                            # Get punchline data
+                            punchline_data = asyncio.run(punchline_generator.process_video_with_punchlines(
+                                local_input_path, 
+                                punchline_variant
+                            ))
+                        else:
+                            logging.warning("Punchlines requested but API keys not configured")
+                    except Exception as e:
+                        logging.error(f"Punchline generation failed for variant {variant_index + 1}: {e}")
+                        # Continue with normal processing if punchlines fail
+                
                 # Apply transformations for this variant
-                applied_transformations = asyncio.run(FFmpegTransformationService.apply_transformations(
-                    local_input_path,
-                    local_output_path,
-                    min_transformations,
-                    variant_progress
-                ))
+                if enable_punchlines and punchline_data:
+                    # Create a temporary file with punchlines applied first
+                    temp_punchline_path = os.path.join(temp_dir, f"punchline_{variant_id}_{variant_filename}")
+                    
+                    # Apply punchlines to video
+                    punchline_generator.create_variant_with_punchlines(
+                        local_input_path,
+                        punchline_data['punchlines'],
+                        temp_punchline_path,
+                        punchline_data['style']
+                    )
+                    
+                    # Now apply other transformations to the punchline-enhanced video
+                    applied_transformations = asyncio.run(FFmpegTransformationService.apply_transformations(
+                        temp_punchline_path,
+                        local_output_path,
+                        min_transformations,
+                        variant_progress
+                    ))
+                    
+                    # Clean up temporary punchline file
+                    if os.path.exists(temp_punchline_path):
+                        os.remove(temp_punchline_path)
+                else:
+                    # Apply transformations normally
+                    applied_transformations = asyncio.run(FFmpegTransformationService.apply_transformations(
+                        local_input_path,
+                        local_output_path,
+                        min_transformations,
+                        variant_progress
+                    ))
                 
                 # Upload processed variant to S3
                 logging.info(f"Uploading variant {variant_index + 1} for job {job_id}")
@@ -208,7 +256,8 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, min_transfor
                     "s3_output_key": s3_output_key,
                     "applied_transformations": applied_transformations,
                     "transformation_count": len(applied_transformations),
-                    "file_size": output_file_size
+                    "file_size": output_file_size,
+                    "punchline_data": punchline_data if enable_punchlines and punchline_data else None
                 }
                 
                 variants.append(variant)

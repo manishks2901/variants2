@@ -16,10 +16,17 @@ class JobPriority(str, Enum):
     NORMAL = "normal"
     HIGH = "high"
 
+class PunchlineConfig(BaseModel):
+    enabled: bool = False
+    variant_style: int = 1  # 1 or 2
+    max_punchlines: int = 2
+    blackscreen_duration: float = 1.0
+
 class TransformationConfig(BaseModel):
     name: str
     probability: float
     parameters: Optional[Dict[str, Any]] = {}
+    punchline_config: Optional[PunchlineConfig] = None
 
 class VideoVariant(BaseModel):
     variant_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -29,6 +36,7 @@ class VideoVariant(BaseModel):
     file_size: Optional[int] = None
     processing_time: Optional[float] = None
     download_url: Optional[str] = None
+    punchline_data: Optional[Dict[str, Any]] = None  # Store punchline/transcript info
 
 class VideoProcessingJob(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

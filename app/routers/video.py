@@ -9,6 +9,7 @@ from ..models import UploadResponse, VideoProcessingJob, JobStatus
 from ..database import get_database
 from ..services.s3_service import S3Service
 from ..services.video_service import VideoProcessingService
+from ..services.punchline_service import VideoPunchlineGenerator
 
 router = APIRouter()
 
@@ -17,7 +18,9 @@ async def upload_video(
     file: UploadFile = File(...),
     priority: Optional[str] = Form("normal"),
     variations: Optional[int] = Form(1),
-    min_transformations: Optional[int] = Form(9)
+    min_transformations: Optional[int] = Form(9),
+    enable_punchlines: Optional[bool] = Form(False),
+    punchline_variant: Optional[int] = Form(1)
 ):
     """
     Upload a video file and start processing job to generate multiple variations
@@ -48,7 +51,12 @@ async def upload_video(
             original_filename=file.filename,
             s3_input_key=f"input/{file.filename}",
             priority=priority,
-            variants_requested=variations
+            variants_requested=variations,
+            metadata={
+                "min_transformations": min_transformations,
+                "enable_punchlines": enable_punchlines,
+                "punchline_variant": punchline_variant if enable_punchlines else None
+            }
         )
         
         # Save job to database
@@ -184,3 +192,52 @@ async def download_processed_video(job_id: str):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Download URL generation failed: {str(e)}")
+
+@router.get("/punchline-status")
+async def get_punchline_status():
+    """
+    Check if punchline generation is available (API keys configured)
+    """
+    try:
+        punchline_service = VideoPunchlineGenerator()
+        return {
+            "available": punchline_service.is_available(),
+            "message": "Punchline generation available" if punchline_service.is_available() else "API keys not configured"
+        }
+    except Exception as e:
+        return {
+            "available": False,
+            "message": f"Error checking punchline service: {str(e)}"
+        }
+
+@router.get("/jobs/{job_id}/punchlines")
+async def get_job_punchlines(job_id: str):
+    """
+    Get punchline data for a specific job
+    """
+    try:
+        db = get_database()
+        job = await db.jobs.find_one({"id": job_id})
+        
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        punchline_variants = []
+        for variant in job.get("variants", []):
+            punchline_data = variant.get("punchline_data")
+            if punchline_data:
+                punchline_variants.append({
+                    "variant_id": variant["variant_id"],
+                    "transcript": punchline_data.get("transcript"),
+                    "punchlines": punchline_data.get("punchlines"),
+                    "style": punchline_data.get("style")
+                })
+        
+        return {
+            "job_id": job_id,
+            "has_punchlines": len(punchline_variants) > 0,
+            "punchline_variants": punchline_variants
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get punchline data: {str(e)}")

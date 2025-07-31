@@ -572,12 +572,13 @@ class FFmpegTransformationService:
                 return f'ffmpeg -i "{input_path}" -filter_complex "{filter_string}" -map "[outv]" -map "[outa]" -y "{output_path}"'
                 
             except Exception as e:
-                # Fallback: Simple approach with geq filter to create black frames
+                # Fallback: Simple fade to black approach
                 fade_time = random.uniform(2, 5)
                 black_duration = random.uniform(1.0, 2.0)
+                fade_end = fade_time + black_duration
                 
-                # Use geq filter to create solid black segments
-                return f'ffmpeg -i "{input_path}" -vf "geq=if(between(t,{fade_time:.2f},{fade_time + black_duration:.2f}),0,lum(X,Y)):cb=128:cr=128" -c:a copy -y "{output_path}"'
+                # Use fade filter instead of geq for better compatibility
+                return f'ffmpeg -i "{input_path}" -vf "fade=t=out:st={fade_time:.2f}:d=0.5:c=black,fade=t=in:st={fade_end - 0.5:.2f}:d=0.5:c=black" -c:a copy -y "{output_path}"'
         
         def pitch_shift_semitones(input_path: str, output_path: str) -> str:
             """Pitch shift audio ±2 semitones"""
@@ -784,22 +785,26 @@ class FFmpegTransformationService:
                 # Choose frame type and insertion point
                 frame_types = ['black', 'white']
                 frame_type = random.choice(frame_types)
-                frame_color = 'black' if frame_type == 'black' else 'white'
                 
                 # Insert point (avoid first/last 2 seconds)
                 insert_time = random.uniform(2, max(3, duration - 2))
                 
-                # FIXED: Simplified approach - use geq filter with very short duration
-                flash_duration = 0.033  # One frame duration
+                # FIXED: Use simpler approach with fade filter for frame flashes
+                flash_duration = 0.1  # Brief flash duration
                 
-                return f'ffmpeg -i "{input_path}" -vf "geq=if(between(t,{insert_time:.3f},{insert_time + flash_duration:.3f}),{255 if frame_color == "white" else 0},lum(X,Y)):cb=128:cr=128" -c:a copy -y "{output_path}"'
+                if frame_type == 'black':
+                    # Create brief black flash
+                    return f'ffmpeg -i "{input_path}" -vf "fade=t=in:st={insert_time:.3f}:d=0.033:c=black,fade=t=out:st={insert_time + 0.033:.3f}:d=0.033:c=black" -c:a copy -y "{output_path}"'
+                else:
+                    # Create brief white flash
+                    return f'ffmpeg -i "{input_path}" -vf "fade=t=in:st={insert_time:.3f}:d=0.033:c=white,fade=t=out:st={insert_time + 0.033:.3f}:d=0.033:c=white" -c:a copy -y "{output_path}"'
                 
             except Exception:
-                # Fallback: Use geq to create random frame flashes
+                # Fallback: Simple brightness flash using simpler syntax
                 flash_time = random.uniform(2, 5)
-                flash_color = random.choice(['0', '255'])  # Black or white
+                brightness_change = random.choice([-0.3, 0.3])  # Dark or bright flash
                 
-                return f'ffmpeg -i "{input_path}" -vf "geq=if(between(t,{flash_time:.3f},{flash_time + 0.033:.3f}),{flash_color},lum(X,Y)):cb=128:cr=128" -c:a copy -y "{output_path}"'
+                return f'ffmpeg -i "{input_path}" -vf "eq=brightness={brightness_change}" -c:a copy -y "{output_path}"'
         
         def clip_embedding_shuffle(input_path: str, output_path: str) -> str:
             """CLIP embedding shuffling with varied emojis and quotes"""
@@ -872,14 +877,12 @@ class FFmpegTransformationService:
                     except:
                         pass
                 
-                # FIXED: Use simple temporal effects instead of complex reverse filter
-                # Option 1: Slight speed variation in a segment
-                segment_start = random.uniform(duration * 0.3, duration * 0.6)
-                segment_duration = random.uniform(0.5, 1.5)
-                speed_factor = random.choice([0.95, 1.05])  # Slight speed change
+                # FIXED: Use simpler approach without between function
+                # Apply slight speed variation to entire video to avoid parsing issues
+                speed_factor = random.choice([0.95, 0.98, 1.02, 1.05])  # Slight speed change
                 
-                # Use setpts for temporal manipulation
-                return f'ffmpeg -i "{input_path}" -vf "setpts=if(between(t,{segment_start:.3f},{segment_start + segment_duration:.3f}),PTS/{speed_factor},PTS)" -c:a copy -y "{output_path}"'
+                # Use setpts for temporal manipulation - simpler syntax
+                return f'ffmpeg -i "{input_path}" -vf "setpts={1/speed_factor}*PTS" -af "atempo={speed_factor}" -y "{output_path}"'
                 
             except Exception:
                 # Fallback: Simple frame rate micro-adjustment for temporal effect

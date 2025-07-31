@@ -8,7 +8,7 @@
 |--------|----------|-------------|------------|
 | **GET** | `/` | Root endpoint | None |
 | **GET** | `/health` | Health check | None |
-| **POST** | `/api/v1/upload` | Upload video & start processing | `file`, `variations`, `priority`, `min_transformations` |
+| **POST** | `/api/v1/upload` | Upload video & start processing | `file`, `variations`, `priority`, `min_transformations`, `enable_punchlines`, `punchline_variant` |
 | **GET** | `/api/v1/jobs/{job_id}` | Get job status (simplified URLs) | Path: `job_id` |
 | **GET** | `/api/v1/jobs` | List all jobs | Query: `status`, `limit`, `skip` |
 | **GET** | `/api/v1/jobs/{job_id}/progress` | Get detailed job progress | Path: `job_id` |
@@ -16,6 +16,8 @@
 | **POST** | `/api/v1/process/{job_id}` | Manually trigger processing | Path: `job_id` |
 | **DELETE** | `/api/v1/cancel/{job_id}` | Cancel job | Path: `job_id` |
 | **GET** | `/api/v1/stats` | Processing statistics | None |
+| **GET** | `/api/v1/punchline-status` | Check punchline generation availability | None |
+| **GET** | `/api/v1/jobs/{job_id}/punchlines` | Get punchline data for job | Path: `job_id` |
 
 ---
 
@@ -145,7 +147,11 @@ Body (form-data):
 - variations: 3 (number, default: 1)
 - priority: normal (text, optional)
 - min_transformations: 9 (number, optional)
+- enable_punchlines: true (boolean, default: false)
+- punchline_variant: 1 (number, 1 or 2, default: 1)
 ```
+
+**Note:** Punchline generation requires API keys for ElevenLabs and Groq services. Check availability with the `/punchline-status` endpoint first.
 
 Expected Response:
 ```json
@@ -232,6 +238,56 @@ Response:
     "completed_jobs": 20,
     "failed_jobs": 2,
     "pending_jobs": 1,
+}
+```
+
+#### **G. Check Punchline Generation Availability**
+```
+GET {{api_base}}/punchline-status
+```
+
+Response:
+```json
+{
+    "available": true,
+    "message": "Punchline generation available"
+}
+```
+
+#### **H. Get Job Punchline Data**
+```
+GET {{api_base}}/jobs/{{job_id}}/punchlines
+```
+
+Response:
+```json
+{
+    "job_id": "job-uuid",
+    "has_punchlines": true,
+    "punchline_variants": [
+        {
+            "variant_id": "variant-uuid",
+            "transcript": "Full video transcript from audio...",
+            "punchlines": [
+                {
+                    "text": "Amazing quote here",
+                    "suggested_timestamp": "0:05"
+                },
+                {
+                    "text": "Another great moment",
+                    "suggested_timestamp": "0:25"
+                }
+            ],
+            "style": {
+                "bg_color": "black",
+                "text_color": "white",
+                "font_size": 50,
+                "border_color": "red",
+                "border_width": 2,
+                "duration": 1.0
+            }
+        }
+    ]
     "processing_jobs": 2,
     "avg_processing_time_seconds": 180.5,
     "total_processing_time_seconds": 3610.0
