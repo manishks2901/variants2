@@ -40,14 +40,14 @@ BALANCED HIGH VARIATION ADDITIONS:
 10. **Balanced Color Shift** - Multi-stage color transformations (conservative)
 11. **Balanced Geometric Distortion** - Subtle barrel, pincushion, trapezoid effects
 12. **Balanced Temporal Manipulation** - Gentle speed variation, frame selection
-13. **Balanced Audio Manipulation** - EQ shifts, phase adjustments (quality-preserving)
+13. **Reduced Audio Manipulation** - EQ shifts, phase adjustments (quality-preserving, REDUCED ranges)
 
 ORIGINALITY PRESERVATION MEASURES:
 - Hue shifts: ±20° (vs extreme ±40°)
 - Saturation: 0.75-1.25 (vs extreme 0.5-1.5)
 - Rotation: ±1.5° (vs extreme ±4°)  
 - Noise: 0.02-0.05 (vs extreme 0.08-0.15)
-- Audio pitch: ±8% (vs extreme ±12%)
+- Audio pitch: ±4% (vs extreme ±12%, REDUCED for quality)
 - Crop percentage: 3-8% (vs extreme 8-15%)
 
 These transformations are applied at random points throughout the video rather than
@@ -73,8 +73,10 @@ import random
 import ffmpeg
 import subprocess
 import asyncio
+import math
 import json
 import os
+import json
 import math
 import logging
 import subprocess
@@ -142,18 +144,18 @@ class AdvancedTransformationMetrics:
     
     @staticmethod
     def get_pitch_shift_range():
-        """Pitch shift: ±6-8% (BALANCED for fingerprint breaking + audio quality)"""
-        return random.uniform(-0.08, 0.08)
+        """Pitch shift: ±3-4% (REDUCED for better audio quality)"""
+        return random.uniform(-0.04, 0.04)
     
     @staticmethod
     def get_tempo_shift_range():
-        """Tempo shift: ±4-6% (BALANCED for timing variation + natural flow)"""
-        return random.uniform(-0.06, 0.06)
+        """Tempo shift: ±2-3% (REDUCED for better natural flow)"""
+        return random.uniform(-0.03, 0.03)
     
     @staticmethod
     def get_audio_noise_level():
-        """Audio layering noise: -20dB to -30dB (BALANCED noise level)"""
-        return random.uniform(0.002, 0.008)  # Balanced amplitude
+        """Audio layering noise: -30dB to -40dB (REDUCED noise level)"""
+        return random.uniform(0.001, 0.003)  # Reduced amplitude
     
     @staticmethod
     def get_video_trim_range():
@@ -167,14 +169,14 @@ class AdvancedTransformationMetrics:
     
     @staticmethod
     def get_audio_video_sync_offset():
-        """Audio-video sync offset: ±100-300ms (BALANCED for detection + sync preservation)"""
-        return random.uniform(-0.3, 0.3)
+        """Audio-video sync offset: ±50-150ms (REDUCED for better sync preservation)"""
+        return random.uniform(-0.15, 0.15)
 
 class FFmpegTransformationService:
     @staticmethod
     def slight_zoom(input_path: str, output_path: str) -> str:
-        """Slight zoom (scale=1.05)"""
-        return f'ffmpeg -i "{input_path}" -vf "scale=iw*1.05:ih*1.05,crop=iw:ih" -c:a copy -y "{output_path}"'
+        """Slight zoom (scale=1.05) with even dimensions"""
+        return f'ffmpeg -i "{input_path}" -vf "scale=2*trunc(iw*1.05/2):2*trunc(ih*1.05/2),crop=iw:ih" -c:a copy -y "{output_path}"'
 
     @staticmethod
     def random_rotate(input_path: str, output_path: str) -> str:
@@ -211,6 +213,395 @@ class FFmpegTransformationService:
             noise_strength = random.uniform(0.01, 0.03)
             return f'ffmpeg -i "{input_path}" -vf "noise=alls={noise_strength}:allf=t" -c:a copy -y "{output_path}"'
     
+    # 🎯 HIGH-IMPACT SSIM REDUCTION STRATEGIES
+    # Based on comprehensive SSIM reduction research - targeting SSIM < 0.30
+    
+    @staticmethod
+    def enhanced_crop_zoom_ssim(input_path: str, output_path: str) -> str:
+        """Enhanced crop + zoom for maximum SSIM reduction (High Impact)"""
+        crop_factor = random.uniform(0.85, 0.95)  # Crop 5-15%
+        zoom_factor = random.uniform(1.02, 1.08)  # Zoom back up
+        
+        # Crop then zoom back up to disrupt structural similarity
+        return f'ffmpeg -i "{input_path}" -vf "crop=iw*{crop_factor}:ih*{crop_factor},scale=2*trunc(iw*{zoom_factor}/2):2*trunc(ih*{zoom_factor}/2)" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def aggressive_gaussian_blur_ssim(input_path: str, output_path: str) -> str:
+        """Aggressive Gaussian blur for texture disruption (High Impact)"""
+        sigma = random.uniform(1.0, 2.5)  # Strong blur for SSIM reduction
+        return f'ffmpeg -i "{input_path}" -vf "gblur=sigma={sigma}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def enhanced_rotation_ssim(input_path: str, output_path: str) -> str:
+        """Enhanced rotation for structural distortion (High Impact)"""
+        angle = random.uniform(-8, 8)  # More aggressive rotation
+        return f'ffmpeg -i "{input_path}" -vf "rotate={angle}*PI/180:fillcolor=black@0.0" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def aggressive_hue_saturation_shift(input_path: str, output_path: str) -> str:
+        """Aggressive hue/saturation shift for color info disruption (High Impact)"""
+        hue_degrees = random.uniform(-30, 30)
+        saturation = random.uniform(0.6, 1.4)
+        brightness = random.uniform(-0.1, 0.1)
+        
+        return f'ffmpeg -i "{input_path}" -vf "hue=h={hue_degrees}:s={saturation},eq=brightness={brightness}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def pattern_disruption_noise(input_path: str, output_path: str) -> str:
+        """Pattern-disrupting noise overlay (High Impact)"""
+        noise_strength = random.uniform(15, 30)  # Strong noise for pattern disruption
+        temporal_noise = random.choice(['t', 'f'])  # Temporal or constant noise
+        
+        return f'ffmpeg -i "{input_path}" -vf "noise=alls={noise_strength}:allf={temporal_noise}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def contrast_brightness_disruption(input_path: str, output_path: str) -> str:
+        """Contrast/brightness disruption for luminance alteration (High Impact)"""
+        contrast = random.uniform(0.8, 1.3)
+        brightness = random.uniform(-0.05, 0.08)
+        gamma = random.uniform(0.9, 1.15)
+        
+        return f'ffmpeg -i "{input_path}" -vf "eq=contrast={contrast}:brightness={brightness}:gamma={gamma}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def strategic_flip_transform(input_path: str, output_path: str) -> str:
+        """Strategic flip for complete structural reversal (High Impact)"""
+        flip_type = random.choice(['hflip', 'vflip'])
+        return f'ffmpeg -i "{input_path}" -vf "{flip_type}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def geometric_grid_overlay(input_path: str, output_path: str) -> str:
+        """Geometric grid pattern overlay for perception alteration (High Impact)"""
+        opacity = random.uniform(0.03, 0.08)
+        grid_size = random.randint(20, 40)
+        
+        # Create grid pattern using drawgrid
+        return f'ffmpeg -i "{input_path}" -vf "drawgrid=width={grid_size}:height={grid_size}:thickness=1:color=white@{opacity}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def temporal_frame_disruption(input_path: str, output_path: str) -> str:
+        """Temporal frame disruption with randomization for time discontinuity (Medium Impact)"""
+    
+        # First get video duration to make smart randomization decisions
+        try:
+            probe_cmd = [
+                'ffprobe', '-v', 'quiet', '-print_format', 'json', 
+                '-show_format', '-show_streams', input_path
+            ]
+            result = subprocess.run(probe_cmd, capture_output=True, text=True)
+            video_info = json.loads(result.stdout)
+            duration = float(video_info['format']['duration'])
+        except:
+            # Fallback if probe fails - assume reasonable duration
+            duration = 30.0
+        
+        # Randomization options
+        disruption_types = [
+            'trim_start_only',
+            'trim_end_only', 
+            'trim_both_ends',
+            'extract_middle_segment',
+            'skip_random_section'
+        ]
+        
+        disruption_type = random.choice(disruption_types)
+        
+        if disruption_type == 'trim_start_only':
+            # Remove random amount from beginning
+            trim_start = random.uniform(0.5, min(3.0, duration * 0.2))
+            keep_duration = duration - trim_start - random.uniform(0.1, 1.0)
+            return f'ffmpeg -i "{input_path}" -ss {trim_start} -t {keep_duration} -c:a copy -y "{output_path}"'
+        
+        elif disruption_type == 'trim_end_only':
+            # Remove random amount from end
+            trim_end = random.uniform(0.5, min(3.0, duration * 0.2))
+            keep_duration = duration - trim_end
+            return f'ffmpeg -i "{input_path}" -t {keep_duration} -c:a copy -y "{output_path}"'
+        
+        elif disruption_type == 'trim_both_ends':
+            # Remove from both start and end
+            trim_start = random.uniform(0.3, min(2.0, duration * 0.15))
+            trim_end = random.uniform(0.3, min(2.0, duration * 0.15))
+            keep_duration = duration - trim_start - trim_end
+            
+            if keep_duration <= 1.0:  # Ensure we keep at least 1 second
+                keep_duration = max(1.0, duration * 0.5)
+                trim_start = min(trim_start, duration * 0.25)
+            
+            return f'ffmpeg -i "{input_path}" -ss {trim_start} -t {keep_duration} -c:a copy -y "{output_path}"'
+        
+        elif disruption_type == 'extract_middle_segment':
+            # Extract a random segment from middle
+            segment_duration = random.uniform(max(5.0, duration * 0.3), duration * 0.7)
+            max_start = duration - segment_duration
+            start_time = random.uniform(max_start * 0.2, max_start * 0.8)
+            return f'ffmpeg -i "{input_path}" -ss {start_time} -t {segment_duration} -c:a copy -y "{output_path}"'
+        
+        elif disruption_type == 'skip_random_section':
+            # Skip a random section in the middle (creates two segments)
+            skip_start = random.uniform(duration * 0.2, duration * 0.5)
+            skip_duration = random.uniform(1.0, min(5.0, duration * 0.3))
+            skip_end = skip_start + skip_duration
+            
+            # Create first segment
+            temp_segment1 = output_path.replace('.mp4', '_temp1.mp4')
+            temp_segment2 = output_path.replace('.mp4', '_temp2.mp4')
+            
+            # This creates a more complex command that would need additional processing
+            # For simplicity, let's just do a single skip by taking everything after the skip
+            start_after_skip = skip_end
+            remaining_duration = duration - start_after_skip
+            
+            return f'ffmpeg -i "{input_path}" -ss {start_after_skip} -t {remaining_duration} -c:a copy -y "{output_path}"'
+        
+        # Default fallback
+        trim_start = random.uniform(0.1, 1.0)
+        keep_duration = random.uniform(max(5.0, duration * 0.5), duration * 0.9)
+        return f'ffmpeg -i "{input_path}" -ss {trim_start} -t {keep_duration} -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def ssim_targeted_distortion_combo(input_path: str, output_path: str) -> str:
+        """Combination of SSIM-targeted distortions in single pass (Ultra High Impact)"""
+        # Multi-layer approach combining multiple high-impact SSIM reducers
+        crop_factor = random.uniform(0.88, 0.94)
+        rotation = random.uniform(-4, 4)
+        blur_sigma = random.uniform(0.8, 1.5)
+        noise_level = random.uniform(10, 20)
+        hue_shift = random.uniform(-15, 15)
+        contrast = random.uniform(0.85, 1.2)
+        
+        complex_filter = (
+            f"crop=iw*{crop_factor}:ih*{crop_factor},"
+            f"rotate={rotation}*PI/180:fillcolor=black@0.0,"
+            f"gblur=sigma={blur_sigma},"
+            f"noise=alls={noise_level}:allf=t,"
+            f"hue=h={hue_shift},"
+            f"eq=contrast={contrast}"
+        )
+        
+        return f'ffmpeg -i "{input_path}" -vf "{complex_filter}" -c:a copy -y "{output_path}"'
+    
+    # 🎯 COMPREHENSIVE SSIM REDUCTION STRATEGIES - HIGH IMPACT TRANSFORMATIONS
+    # Implementation of the complete SSIM reduction strategy table
+    
+    @staticmethod
+    def high_impact_crop_zoom(input_path: str, output_path: str) -> str:
+        """Crop + Zoom - Reduces structural similarity (High Impact)"""
+        crop_factor = random.uniform(0.85, 0.95)  # Crop 5-15%
+        return f'ffmpeg -i "{input_path}" -vf "crop=iw*{crop_factor}:ih*{crop_factor}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def high_impact_rotation(input_path: str, output_path: str) -> str:
+        """Random Rotation - Distorts structure (High Impact)"""
+        angle = random.uniform(-8, 8)  # ±8° rotation for stronger effect
+        return f'ffmpeg -i "{input_path}" -vf "rotate=PI/180*{angle}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def high_impact_gaussian_blur(input_path: str, output_path: str) -> str:
+        """Gaussian Blur - Blurs detail & texture (High Impact)"""
+        sigma = random.uniform(1.0, 2.0)  # Strong blur
+        return f'ffmpeg -i "{input_path}" -vf "gblur=sigma={sigma}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def high_impact_color_shift_hue(input_path: str, output_path: str) -> str:
+        """Color Shift (Hue) - Changes color info (High Impact)"""
+        saturation = random.uniform(0.5, 1.5)  # Dramatic saturation change
+        hue_degrees = random.uniform(-40, 40)   # Significant hue shift
+        return f'ffmpeg -i "{input_path}" -vf "hue=s={saturation}:h={hue_degrees}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def high_impact_add_noise(input_path: str, output_path: str) -> str:
+        """Add Noise - Disrupts patterns (High Impact)"""
+        noise_strength = random.uniform(15, 25)  # Strong noise
+        # Use 't' for temporal noise or remove allf parameter
+        return f'ffmpeg -i "{input_path}" -vf "noise=alls={noise_strength}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def high_impact_contrast_brightness(input_path: str, output_path: str) -> str:
+        """Contrast/Brightness Shift - Alters luminance (High Impact)"""
+        contrast = random.uniform(0.7, 1.4)      # Strong contrast change
+        brightness = random.uniform(-0.1, 0.1)   # Brightness adjustment
+        return f'ffmpeg -i "{input_path}" -vf "eq=contrast={contrast}:brightness={brightness}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def high_impact_flip_transform(input_path: str, output_path: str) -> str:
+        """Flip (Horizontal/Vertical) - Reverses structure (High Impact)"""
+        flip_type = random.choice(['hflip', 'vflip'])
+        return f'ffmpeg -i "{input_path}" -vf "{flip_type}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def high_impact_overlay_texture_pattern(input_path: str, output_path: str) -> str:
+        """Overlay Texture/Pattern - Alters perception (High Impact)"""
+        # Grid overlay
+        grid_size = random.randint(15, 35)
+        opacity = random.uniform(0.05, 0.12)
+        thickness = random.randint(1, 2)
+        color = random.choice(['white', 'black', 'gray'])
+        
+        return f'ffmpeg -i "{input_path}" -vf "drawgrid=width={grid_size}:height={grid_size}:thickness={thickness}:color={color}@{opacity}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def medium_impact_trim_start_end(input_path: str, output_path: str) -> str:
+        """Trim Start/End - Slight time variation (Medium Impact)"""
+        trim_start = random.uniform(0.5, 2.0)   # Trim start seconds
+        trim_duration = random.uniform(25, 30)  # Keep 25-30 seconds
+        return f'ffmpeg -i "{input_path}" -ss {trim_start} -t {trim_duration} -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def medium_impact_insert_black_frame(input_path: str, output_path: str) -> str:
+        """Insert Black Frame - Time discontinuity (Medium Impact)"""
+        # Insert black frame at random position
+        position = random.uniform(5, 15)  # Insert between 5-15 seconds
+        duration = random.uniform(0.1, 0.3)  # Black frame duration
+        
+        return f'ffmpeg -i "{input_path}" -vf "drawbox=enable=\'between(t,{position},{position + duration})\':x=0:y=0:w=iw:h=ih:color=black:t=fill" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def advanced_ssim_reduction_pipeline(input_path: str, output_path: str) -> str:
+        """Advanced SSIM Reduction Pipeline - Combines multiple high-impact transformations"""
+        # Combine 4-5 high-impact transformations in a single pass
+        crop_factor = random.uniform(0.88, 0.95)
+        rotation = random.uniform(-6, 6)
+        blur_sigma = random.uniform(1.0, 1.8)
+        noise_level = random.uniform(12, 22)
+        hue_shift = random.uniform(-25, 25)
+        saturation = random.uniform(0.6, 1.4)
+        contrast = random.uniform(0.8, 1.3)
+        brightness = random.uniform(-0.08, 0.08)
+        
+        # Grid overlay parameters
+        grid_size = random.randint(20, 35)
+        grid_opacity = random.uniform(0.04, 0.09)
+        
+        complex_filter = (
+            f"crop=iw*{crop_factor}:ih*{crop_factor},"
+            f"rotate={rotation}*PI/180:fillcolor=black@0.0,"
+            f"gblur=sigma={blur_sigma},"
+            f"noise=alls={noise_level}:allf=t,"
+            f"hue=h={hue_shift}:s={saturation},"
+            f"eq=contrast={contrast}:brightness={brightness},"
+            f"drawgrid=width={grid_size}:height={grid_size}:thickness=1:color=white@{grid_opacity}"
+        )
+        
+        return f'ffmpeg -i "{input_path}" -vf "{complex_filter}" -c:a copy -y "{output_path}"'
+    
+    @staticmethod
+    def extreme_ssim_destroyer(input_path: str, output_path: str) -> str:
+        """Extreme SSIM Destroyer - Maximum structural disruption for challenging content"""
+        # Ultra-aggressive combination targeting SSIM < 0.25
+        crop_factor = random.uniform(0.82, 0.90)   # Heavy crop
+        rotation = random.uniform(-10, 10)         # Extreme rotation
+        blur_sigma = random.uniform(1.5, 2.5)     # Very strong blur
+        noise_level = random.uniform(20, 35)      # Heavy noise
+        hue_shift = random.uniform(-45, 45)       # Extreme hue shift
+        saturation = random.uniform(0.4, 1.6)     # Dramatic saturation
+        contrast = random.uniform(0.6, 1.5)       # Strong contrast change
+        
+        # Random flip decision
+        flip_filter = random.choice(['', 'hflip,', 'vflip,'])
+        
+        complex_filter = (
+            f"{flip_filter}"
+            f"crop=iw*{crop_factor}:ih*{crop_factor},"
+            f"rotate={rotation}*PI/180:fillcolor=black@0.0,"
+            f"gblur=sigma={blur_sigma},"
+            f"noise=alls={noise_level}:allf=t,"
+            f"hue=h={hue_shift}:s={saturation},"
+            f"eq=contrast={contrast}"
+        ).lstrip(',')
+        
+        return f'ffmpeg -i "{input_path}" -vf "{complex_filter}" -c:a copy -y "{output_path}"'
+    
+    # 🎯 COMPREHENSIVE SSIM REDUCTION STRATEGY PIPELINE
+    # Implementation of the complete strategy table for maximum SSIM reduction
+    
+    @staticmethod
+    def apply_comprehensive_ssim_strategy(input_path: str, output_path: str, strategy_level: str = "high") -> str:
+        """
+        Apply the comprehensive SSIM reduction strategy from the strategy table.
+        
+        Args:
+            strategy_level: "high", "medium", or "extreme"
+                - high: 3-4 high-impact transformations (target SSIM < 0.30)
+                - medium: 2-3 high-impact + 1-2 medium-impact (target SSIM < 0.35)
+                - extreme: 5-6 high-impact transformations (target SSIM < 0.25)
+        """
+        import tempfile
+        
+        # High-impact transformations (High Impact Level ✅)
+        high_impact_options = [
+            'high_impact_crop_zoom',
+            'high_impact_rotation', 
+            'high_impact_gaussian_blur',
+            'high_impact_color_shift_hue',
+            'high_impact_add_noise',
+            'high_impact_contrast_brightness',
+            'high_impact_flip_transform',
+            'high_impact_overlay_texture_pattern'
+        ]
+        
+        # Medium-impact transformations (Medium Impact Level ⚠️)
+        medium_impact_options = [
+            'medium_impact_trim_start_end',
+            'medium_impact_insert_black_frame'
+        ]
+        
+        applied_transformations = []
+        current_input = input_path
+        temp_files = []
+        
+        try:
+            if strategy_level == "extreme":
+                # Extreme: 5-6 high-impact transformations
+                selected_high = random.sample(high_impact_options, k=random.randint(5, 6))
+                selected_medium = []
+                target_ssim = "< 0.25"
+            elif strategy_level == "medium":
+                # Medium: 2-3 high-impact + 1-2 medium-impact
+                selected_high = random.sample(high_impact_options, k=random.randint(2, 3))
+                selected_medium = random.sample(medium_impact_options, k=random.randint(1, 2))
+                target_ssim = "< 0.35"
+            else:  # high
+                # High: 3-4 high-impact transformations
+                selected_high = random.sample(high_impact_options, k=random.randint(3, 4))
+                selected_medium = []
+                target_ssim = "< 0.30"
+            
+            all_selected = selected_high + selected_medium
+            logging.info(f'🎯 Applying COMPREHENSIVE SSIM STRATEGY ({strategy_level.upper()}): {len(all_selected)} transformations, target SSIM {target_ssim}')
+            
+            for transform_name in all_selected:
+                temp_output = tempfile.mktemp(suffix='.mp4', prefix='ssim_')
+                temp_files.append(temp_output)
+                
+                # Apply transformation
+                transform_method = getattr(FFmpegTransformationService, transform_name)
+                cmd = transform_method(current_input, temp_output)
+                
+                result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                if result.returncode == 0:
+                    applied_transformations.append(transform_name)
+                    current_input = temp_output
+                    logging.info(f'   ✅ {transform_name}')
+                else:
+                    logging.warning(f'   ❌ {transform_name} failed: {result.stderr}')
+            
+            # Copy final result to output
+            if current_input != input_path:
+                shutil.copy2(current_input, output_path)
+                logging.info(f'🎯 COMPREHENSIVE SSIM STRATEGY COMPLETE: {len(applied_transformations)}/{len(all_selected)} transformations applied')
+            
+        finally:
+            # Cleanup temp files
+            for temp_file in temp_files:
+                if os.path.exists(temp_file):
+                    try:
+                        os.remove(temp_file)
+                    except:
+                        pass
+        
+        return f"Applied {len(applied_transformations)} SSIM reduction transformations: {', '.join(applied_transformations)}"
+    
     # ✅ STRATEGY: 7-LAYER TRANSFORMATION PIPELINE
     # Each layer targets specific similarity metrics for maximum entropy reduction
     
@@ -220,11 +611,11 @@ class FFmpegTransformationService:
         Apply 7-layer transformation pipeline for maximum similarity reduction.
         
         Strategy:
-        - Layer 1: ORB Similarity Disruption (2-3 transforms)
+        - Layer 1: ORB Similarity Disruption (1-3 transforms)
         - Layer 2: Audio Fingerprint Obfuscation (2-3 transforms) 
         - Layer 3: SSIM & Structural Shift (1-2 transforms)
-        - Layer 4: PHash Distance Increase (1-2 transforms)
-        - Layer 5: Metadata Scrambling (1-2 transforms)
+        - Layer 4: PHash Distance Increase (1 transform)
+        - Layer 5: Metadata Scrambling (2-3 transforms)
         - Layer 6: Temporal Flow Disruption (1-2 transforms)
         - Layer 7: Semantic / Overlay Distortion (1-2 transforms)
         
@@ -243,7 +634,7 @@ class FFmpegTransformationService:
             random.seed(variant_id)
         
         try:
-            # 🔴 LAYER 1: ORB Similarity Disruption (High Weight) - Apply 2-3
+            # 🔴 LAYER 1: ORB Similarity Disruption (High Weight) - Apply 1-3
             layer1_transforms = [
                 'micro_perspective_warp',
                 'frame_jittering', 
@@ -254,7 +645,7 @@ class FFmpegTransformationService:
                 'color_histogram_shift_enhanced',
                 'phash_disruption_enhanced'
             ]
-            selected_layer1 = random.sample(layer1_transforms, k=random.randint(2, 3))
+            selected_layer1 = random.sample(layer1_transforms, k=random.randint(1, 3))
             
             for transform in selected_layer1:
                 temp_output = tempfile.mktemp(suffix='.mp4', prefix='layer1_')
@@ -319,8 +710,18 @@ class FFmpegTransformationService:
                 else:
                     logging.warning(f"Layer 2 transform {transform} failed: {result.stderr}")
             
-            # 🟡 LAYER 3: SSIM & Structural Shift (Medium Weight) - Apply 1-2
+            # 🟡 LAYER 3: SSIM & Structural Shift (High Impact SSIM Reduction) - Apply 2-3
             layer3_transforms = [
+                'high_impact_crop_zoom',
+                'high_impact_rotation', 
+                'high_impact_gaussian_blur',
+                'high_impact_color_shift_hue',
+                'high_impact_add_noise',
+                'high_impact_contrast_brightness',
+                'high_impact_flip_transform',
+                'high_impact_overlay_texture_pattern',
+                'advanced_ssim_reduction_pipeline',
+                'extreme_ssim_destroyer',
                 'ssim_reduction_controlled',
                 'frame_micro_adjustments',
                 'random_motion_blur_effects',
@@ -328,13 +729,35 @@ class FFmpegTransformationService:
                 'film_grain_simulation',
                 'random_geometric_warp'
             ]
-            selected_layer3 = random.sample(layer3_transforms, k=random.randint(1, 2))
+            selected_layer3 = random.sample(layer3_transforms, k=random.randint(2, 3))  # Increased to 2-3 for stronger SSIM reduction
             
             for transform in selected_layer3:
                 temp_output = tempfile.mktemp(suffix='.mp4', prefix='layer3_')
                 temp_files.append(temp_output)
                 
-                if transform == 'ssim_reduction_controlled':
+                # New high-impact SSIM reduction transformations
+                if transform == 'high_impact_crop_zoom':
+                    cmd = FFmpegTransformationService.high_impact_crop_zoom(current_input, temp_output)
+                elif transform == 'high_impact_rotation':
+                    cmd = FFmpegTransformationService.high_impact_rotation(current_input, temp_output)
+                elif transform == 'high_impact_gaussian_blur':
+                    cmd = FFmpegTransformationService.high_impact_gaussian_blur(current_input, temp_output)
+                elif transform == 'high_impact_color_shift_hue':
+                    cmd = FFmpegTransformationService.high_impact_color_shift_hue(current_input, temp_output)
+                elif transform == 'high_impact_add_noise':
+                    cmd = FFmpegTransformationService.high_impact_add_noise(current_input, temp_output)
+                elif transform == 'high_impact_contrast_brightness':
+                    cmd = FFmpegTransformationService.high_impact_contrast_brightness(current_input, temp_output)
+                elif transform == 'high_impact_flip_transform':
+                    cmd = FFmpegTransformationService.high_impact_flip_transform(current_input, temp_output)
+                elif transform == 'high_impact_overlay_texture_pattern':
+                    cmd = FFmpegTransformationService.high_impact_overlay_texture_pattern(current_input, temp_output)
+                elif transform == 'advanced_ssim_reduction_pipeline':
+                    cmd = FFmpegTransformationService.advanced_ssim_reduction_pipeline(current_input, temp_output)
+                elif transform == 'extreme_ssim_destroyer':
+                    cmd = FFmpegTransformationService.extreme_ssim_destroyer(current_input, temp_output)
+                # Existing transformations
+                elif transform == 'ssim_reduction_controlled':
                     cmd = FFmpegTransformationService.ssim_reduction_controlled(current_input, temp_output)
                 elif transform == 'frame_micro_adjustments':
                     cmd = FFmpegTransformationService.frame_micro_adjustments(current_input, temp_output)
@@ -354,7 +777,7 @@ class FFmpegTransformationService:
                 else:
                     logging.warning(f"Layer 3 transform {transform} failed: {result.stderr}")
             
-            # 🟡 LAYER 4: PHash Distance Increase (Medium Weight) - Apply 1-2
+            # 🟡 LAYER 4: PHash Distance Increase (Medium Weight) - Apply 1 (adjusted for 3-6 visual range)
             layer4_transforms = [
                 'extreme_phash_disruption',
                 'color_channel_swapping',
@@ -362,7 +785,7 @@ class FFmpegTransformationService:
                 'texture_blend_overlay',
                 'clip_embedding_shift_enhanced'
             ]
-            selected_layer4 = random.sample(layer4_transforms, k=random.randint(1, 2))
+            selected_layer4 = random.sample(layer4_transforms, k=1)
             
             for transform in selected_layer4:
                 temp_output = tempfile.mktemp(suffix='.mp4', prefix='layer4_')
@@ -386,14 +809,18 @@ class FFmpegTransformationService:
                 else:
                     logging.warning(f"Layer 4 transform {transform} failed: {result.stderr}")
             
-            # 🟢 LAYER 5: Metadata Scrambling (Low Weight) - Apply 1-2
+            # 🟢 LAYER 5: Metadata Scrambling (Low Weight) - Apply 2-3 (INCREASED)
             layer5_transforms = [
                 'metadata_strip_randomize',
                 'uuid_injection_system',
                 'advanced_metadata_spoofing',
-                'ultra_metadata_randomization'
+                'ultra_metadata_randomization',
+                'codec_metadata_randomization',
+                'timestamp_metadata_fuzzing',
+                'uuid_metadata_injection',
+                'creation_time_fuzzing'
             ]
-            selected_layer5 = random.sample(layer5_transforms, k=random.randint(1, 2))
+            selected_layer5 = random.sample(layer5_transforms, k=random.randint(2, 3))  # INCREASED from 1-2 to 2-3
             
             for transform in selected_layer5:
                 temp_output = tempfile.mktemp(suffix='.mp4', prefix='layer5_')
@@ -407,6 +834,14 @@ class FFmpegTransformationService:
                     cmd = FFmpegTransformationService.advanced_metadata_spoofing(current_input, temp_output)
                 elif transform == 'ultra_metadata_randomization':
                     cmd = FFmpegTransformationService.ultra_metadata_randomization(current_input, temp_output)
+                elif transform == 'codec_metadata_randomization':
+                    cmd = FFmpegTransformationService.codec_metadata_randomization(current_input, temp_output)
+                elif transform == 'timestamp_metadata_fuzzing':
+                    cmd = FFmpegTransformationService.timestamp_metadata_fuzzing(current_input, temp_output)
+                elif transform == 'uuid_metadata_injection':
+                    cmd = FFmpegTransformationService.uuid_metadata_injection(current_input, temp_output)
+                elif transform == 'creation_time_fuzzing':
+                    cmd = FFmpegTransformationService.creation_time_fuzzing(current_input, temp_output)
                 
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
                 if result.returncode == 0:
@@ -415,8 +850,10 @@ class FFmpegTransformationService:
                 else:
                     logging.warning(f"Layer 5 transform {transform} failed: {result.stderr}")
             
-            # 🌀 LAYER 6: Temporal Flow Disruption - Apply 1-2
+            # 🌀 LAYER 6: Temporal Flow Disruption (Including Medium-Impact SSIM) - Apply 1-2
             layer6_transforms = [
+                'medium_impact_trim_start_end',
+                'medium_impact_insert_black_frame',
                 'temporal_shift_advanced',
                 'frame_trimming_dropout',
                 'black_screen_random',
@@ -429,7 +866,13 @@ class FFmpegTransformationService:
                 temp_output = tempfile.mktemp(suffix='.mp4', prefix='layer6_')
                 temp_files.append(temp_output)
                 
-                if transform == 'temporal_shift_advanced':
+                # Medium-impact SSIM transformations
+                if transform == 'medium_impact_trim_start_end':
+                    cmd = FFmpegTransformationService.medium_impact_trim_start_end(current_input, temp_output)
+                elif transform == 'medium_impact_insert_black_frame':
+                    cmd = FFmpegTransformationService.medium_impact_insert_black_frame(current_input, temp_output)
+                # Existing transformations
+                elif transform == 'temporal_shift_advanced':
                     cmd = FFmpegTransformationService.temporal_shift_advanced(current_input, temp_output)
                 elif transform == 'frame_trimming_dropout':
                     cmd = FFmpegTransformationService.frame_trimming_dropout(current_input, temp_output)
@@ -496,6 +939,21 @@ class FFmpegTransformationService:
                 except:
                     pass
     
+    @staticmethod
+    def validate_atempo_value(speed_factor: float) -> str:
+        """
+        Validate and create atempo filter chain for speed changes.
+        atempo filter only accepts values between 0.5 and 2.0
+        """
+        if speed_factor < 0.5:
+            # For very slow speeds, chain multiple atempo filters
+            return "atempo=0.5,atempo=" + str(speed_factor / 0.5)
+        elif speed_factor > 2.0:
+            # For very fast speeds, chain multiple atempo filters  
+            return "atempo=2.0,atempo=" + str(speed_factor / 2.0)
+        else:
+            return f"atempo={speed_factor}"
+
     @staticmethod
     def validate_number(value: float, min_val: float, max_val: float, fallback: float) -> float:
         """Helper function to ensure numeric values are valid and within bounds"""
@@ -727,6 +1185,32 @@ class FFmpegTransformationService:
             TransformationConfig('aggressive_geometric_distortion', 0.4, FFmpegTransformationService.aggressive_geometric_distortion, 'visual'),
             TransformationConfig('aggressive_temporal_manipulation', 0.4, FFmpegTransformationService.aggressive_temporal_manipulation, 'temporal'),
             
+            # 🎯 HIGH-IMPACT SSIM REDUCTION STRATEGIES (11) - Targeting SSIM < 0.30
+            TransformationConfig('enhanced_crop_zoom_ssim', 0.8, FFmpegTransformationService.enhanced_crop_zoom_ssim, 'ssim_reduction'),
+            TransformationConfig('aggressive_gaussian_blur_ssim', 0.7, FFmpegTransformationService.aggressive_gaussian_blur_ssim, 'ssim_reduction'),
+            TransformationConfig('enhanced_rotation_ssim', 0.7, FFmpegTransformationService.enhanced_rotation_ssim, 'ssim_reduction'),
+            TransformationConfig('aggressive_hue_saturation_shift', 0.8, FFmpegTransformationService.aggressive_hue_saturation_shift, 'ssim_reduction'),
+            TransformationConfig('pattern_disruption_noise', 0.7, FFmpegTransformationService.pattern_disruption_noise, 'ssim_reduction'),
+            TransformationConfig('contrast_brightness_disruption', 0.8, FFmpegTransformationService.contrast_brightness_disruption, 'ssim_reduction'),
+            TransformationConfig('strategic_flip_transform', 0.6, FFmpegTransformationService.strategic_flip_transform, 'ssim_reduction'),
+            TransformationConfig('geometric_grid_overlay', 0.6, FFmpegTransformationService.geometric_grid_overlay, 'ssim_reduction'),
+            TransformationConfig('temporal_frame_disruption', 0.5, FFmpegTransformationService.temporal_frame_disruption, 'ssim_reduction'),
+            TransformationConfig('ssim_targeted_distortion_combo', 0.9, FFmpegTransformationService.ssim_targeted_distortion_combo, 'ssim_reduction'),
+            
+            # 🎯 COMPREHENSIVE SSIM REDUCTION STRATEGIES - IMPLEMENTATION OF STRATEGY TABLE (11) - High Impact
+            TransformationConfig('high_impact_crop_zoom', 0.85, FFmpegTransformationService.high_impact_crop_zoom, 'ssim_reduction'),
+            TransformationConfig('high_impact_rotation', 0.8, FFmpegTransformationService.high_impact_rotation, 'ssim_reduction'),
+            TransformationConfig('high_impact_gaussian_blur', 0.8, FFmpegTransformationService.high_impact_gaussian_blur, 'ssim_reduction'),
+            TransformationConfig('high_impact_color_shift_hue', 0.85, FFmpegTransformationService.high_impact_color_shift_hue, 'ssim_reduction'),
+            TransformationConfig('high_impact_add_noise', 0.8, FFmpegTransformationService.high_impact_add_noise, 'ssim_reduction'),
+            TransformationConfig('high_impact_contrast_brightness', 0.85, FFmpegTransformationService.high_impact_contrast_brightness, 'ssim_reduction'),
+            TransformationConfig('high_impact_flip_transform', 0.75, FFmpegTransformationService.high_impact_flip_transform, 'ssim_reduction'),
+            TransformationConfig('high_impact_overlay_texture_pattern', 0.8, FFmpegTransformationService.high_impact_overlay_texture_pattern, 'ssim_reduction'),
+            TransformationConfig('medium_impact_trim_start_end', 0.6, FFmpegTransformationService.medium_impact_trim_start_end, 'ssim_reduction'),
+            TransformationConfig('medium_impact_insert_black_frame', 0.55, FFmpegTransformationService.medium_impact_insert_black_frame, 'ssim_reduction'),
+            TransformationConfig('advanced_ssim_reduction_pipeline', 0.9, FFmpegTransformationService.advanced_ssim_reduction_pipeline, 'ssim_reduction'),
+            TransformationConfig('extreme_ssim_destroyer', 0.7, FFmpegTransformationService.extreme_ssim_destroyer, 'ssim_reduction'),
+            
             # CORE AUDIO TRANSFORMATIONS (10) 
             TransformationConfig('aggressive_audio_manipulation', 0.4, FFmpegTransformationService.aggressive_audio_manipulation, 'audio'),
             TransformationConfig('spectral_fingerprint_disruption', 0.7, FFmpegTransformationService.spectral_fingerprint_disruption, 'audio'),
@@ -903,7 +1387,7 @@ class FFmpegTransformationService:
         pan_x = max(0, min(crop_percent * 0.6, pan_x))
         pan_y = max(0, min(crop_percent * 0.6, pan_y))
         
-        return f'ffmpeg -i "{input_path}" -vf "crop=iw*(1-{crop_percent:.3f}):ih*(1-{crop_percent:.3f}):iw*{pan_x:.3f}:ih*{pan_y:.3f},scale=iw:ih,noise=alls={noise_strength:.3f}:allf=t,unsharp=5:5:{sharpen_strength:.3f}:5:5:{blur_strength:.3f},rotate={rotation:.3f}*PI/180:fillcolor=black" -c:a copy -y "{output_path}"'
+        return f'ffmpeg -i "{input_path}" -vf "crop=iw*(1-{crop_percent:.3f}):ih*(1-{crop_percent:.3f}):iw*{pan_x:.3f}:ih*{pan_y:.3f},scale=2*trunc(iw/2):2*trunc(ih/2),noise=alls={noise_strength:.3f}:allf=t,unsharp=5:5:{sharpen_strength:.3f}:5:5:{blur_strength:.3f},rotate={rotation:.3f}*PI/180:fillcolor=black" -c:a copy -y "{output_path}"'
         
     @staticmethod
     def color_histogram_shift(input_path: str, output_path: str) -> str:
@@ -947,15 +1431,173 @@ class FFmpegTransformationService:
 
     @staticmethod
     def embedding_similarity_change(input_path: str, output_path: str) -> str:
-        """CLIP Embedding distance change >= 0.35 (INCREASED for high variation)"""
-        texts = ['SAMPLE', 'PREVIEW', 'DEMO', '© 2025', 'ORIGINAL', 'HD QUALITY', '🎬 EXCLUSIVE', '⭐ PREMIUM']
-        text = random.choice(texts)
-        opacity = random.uniform(0.3, 0.6)  # INCREASED from 0.1-0.25
-        fontsize = random.randint(36, 64)  # INCREASED from 18-32
-        positions = ['x=10:y=10', 'x=w-tw-10:y=10', 'x=10:y=h-th-10', 'x=w-tw-10:y=h-th-10', 'x=(w-tw)/2:y=(h-th)/2']
-        position = random.choice(positions)
-
-        return f'ffmpeg -i "{input_path}" -vf "drawtext=text=\'{text}\':fontcolor=white@{opacity}:fontsize={fontsize}:{position}:box=1:boxcolor=black@0.3" -c:a copy -y "{output_path}"'
+        """Enhanced CLIP Embedding distance change >= 0.35 with dynamic visual disruption"""
+    
+        # Get video properties for intelligent modifications
+        try:
+            probe_cmd = [
+                'ffprobe', '-v', 'quiet', '-print_format', 'json',
+                '-show_format', '-show_streams', input_path
+            ]
+            result = subprocess.run(probe_cmd, capture_output=True, text=True)
+            video_info = json.loads(result.stdout)
+            
+            # Extract video properties
+            video_stream = next(s for s in video_info['streams'] if s['codec_type'] == 'video')
+            width = int(video_stream['width'])
+            height = int(video_stream['height'])
+            duration = float(video_info['format']['duration'])
+            fps = eval(video_stream['r_frame_rate'])  # Convert fraction to float
+        except:
+            # Fallback values
+            width, height, duration, fps = 1920, 1080, 30.0, 24.0
+        
+        # Enhanced text options with more variation
+        watermark_texts = [
+            'SAMPLE', 'PREVIEW', 'DEMO', '© 2025', 'ORIGINAL', 'HD QUALITY', 
+            '🎬 EXCLUSIVE', '⭐ PREMIUM', 'DRAFT', 'UNFINISHED', 'BETA VERSION',
+            '🔒 LOCKED', '💎 VIP', '🎯 BRANDED', 'PROTOTYPE', 'CONFIDENTIAL',
+            'NOT FOR SALE', 'EVALUATION COPY', '📺 BROADCAST', '🌟 FEATURED'
+        ]
+        
+        # Enhanced modification types
+        modification_types = [
+            'animated_watermark',
+            'multi_layer_overlay',
+            'corner_branding',
+            'dynamic_text_scroll',
+            'pulsing_watermark',
+            'rotating_overlay',
+            'gradient_overlay',
+            'multi_position_stamps'
+        ]
+        
+        mod_type = random.choice(modification_types)
+        
+        if mod_type == 'animated_watermark':
+            # Animated moving watermark
+            text = random.choice(watermark_texts)
+            opacity = random.uniform(0.4, 0.7)
+            fontsize = random.randint(48, 96)
+            speed = random.uniform(50, 150)  # pixels per second
+            
+            # Animate across screen
+            start_x = random.choice([-200, width + 200])
+            end_x = width + 200 if start_x < 0 else -200
+            y_pos = random.randint(height//4, 3*height//4)
+            
+            return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text}':fontcolor=white@{opacity}:fontsize={fontsize}:x='if(lt(t,0),{start_x},{start_x}+({end_x}-{start_x})*t/{duration})':y={y_pos}:box=1:boxcolor=black@0.4:enable='between(t,0,{duration})'" -c:a copy -y "{output_path}"'''
+        
+        elif mod_type == 'multi_layer_overlay':
+            # Multiple overlapping watermarks
+            text1 = random.choice(watermark_texts)
+            text2 = random.choice(watermark_texts)
+            opacity1 = random.uniform(0.3, 0.5)
+            opacity2 = random.uniform(0.2, 0.4)
+            fontsize1 = random.randint(40, 70)
+            fontsize2 = random.randint(30, 50)
+            
+            return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text1}':fontcolor=red@{opacity1}:fontsize={fontsize1}:x=50:y=50:box=1:boxcolor=black@0.3,drawtext=text='{text2}':fontcolor=blue@{opacity2}:fontsize={fontsize2}:x=w-tw-50:y=h-th-50:box=1:boxcolor=white@0.2" -c:a copy -y "{output_path}"'''
+        
+        elif mod_type == 'corner_branding':
+            # Enhanced corner watermarks with rotation
+            text = random.choice(watermark_texts)
+            opacity = random.uniform(0.4, 0.8)
+            fontsize = random.randint(36, 80)
+            angle = random.uniform(-15, 15)  # Slight rotation
+            corner = random.choice(['tl', 'tr', 'bl', 'br'])
+            
+            positions = {
+                'tl': 'x=20:y=40',
+                'tr': 'x=w-tw-20:y=40', 
+                'bl': 'x=20:y=h-th-20',
+                'br': 'x=w-tw-20:y=h-th-20'
+            }
+            
+            return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text}':fontcolor=yellow@{opacity}:fontsize={fontsize}:{positions[corner]}:box=1:boxcolor=black@0.5:boxborderw=3" -c:a copy -y "{output_path}"'''
+        
+        elif mod_type == 'dynamic_text_scroll':
+            # Scrolling text across screen
+            text = random.choice(watermark_texts)
+            opacity = random.uniform(0.5, 0.8)
+            fontsize = random.randint(60, 120)
+            direction = random.choice(['horizontal', 'vertical'])
+            
+            if direction == 'horizontal':
+                return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text}':fontcolor=cyan@{opacity}:fontsize={fontsize}:x='w-mod(50*t,w+tw)':y=h/2:box=1:boxcolor=black@0.4" -c:a copy -y "{output_path}"'''
+            else:
+                return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text}':fontcolor=magenta@{opacity}:fontsize={fontsize}:x=w/2-tw/2:y='h-mod(30*t,h+th)':box=1:boxcolor=black@0.4" -c:a copy -y "{output_path}"'''
+        
+        elif mod_type == 'pulsing_watermark':
+            # Pulsing/breathing effect
+            text = random.choice(watermark_texts)
+            base_opacity = random.uniform(0.3, 0.6)
+            fontsize = random.randint(50, 100)
+            pulse_speed = random.uniform(0.5, 2.0)
+            
+            return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text}':fontcolor=white@'{base_opacity}+0.3*sin(2*PI*{pulse_speed}*t)':fontsize={fontsize}:x=(w-tw)/2:y=(h-th)/2:box=1:boxcolor=black@0.4" -c:a copy -y "{output_path}"'''
+        
+        elif mod_type == 'rotating_overlay':
+            # Rotating watermark
+            text = random.choice(watermark_texts)
+            opacity = random.uniform(0.4, 0.7)
+            fontsize = random.randint(40, 80)
+            rotation_speed = random.uniform(10, 45)  # degrees per second
+            
+            return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text}':fontcolor=orange@{opacity}:fontsize={fontsize}:x=(w-tw)/2:y=(h-th)/2:box=1:boxcolor=black@0.3" -c:a copy -y "{output_path}"'''
+        
+        elif mod_type == 'gradient_overlay':
+            # Semi-transparent gradient overlay with text
+            text = random.choice(watermark_texts)
+            opacity = random.uniform(0.6, 0.9)
+            fontsize = random.randint(72, 140)
+            gradient_opacity = random.uniform(0.1, 0.3)
+            
+            # Create gradient overlay first, then add text
+            return f'''ffmpeg -i "{input_path}" -vf "drawbox=x=0:y=h*3/4:w=w:h=h/4:color=black@{gradient_opacity}:t=fill,drawtext=text='{text}':fontcolor=white@{opacity}:fontsize={fontsize}:x=(w-tw)/2:y=h*7/8-th/2" -c:a copy -y "{output_path}"'''
+        
+        elif mod_type == 'multi_position_stamps':
+            # Multiple small stamps at different positions
+            text = random.choice(watermark_texts[:5])  # Shorter texts for stamps
+            opacity = random.uniform(0.4, 0.6)
+            fontsize = random.randint(24, 48)
+            
+            # Generate 3-5 random positions
+            num_stamps = random.randint(3, 5)
+            stamp_filter = ""
+            
+            for i in range(num_stamps):
+                x_pos = random.randint(20, max(20, width - 200))
+                y_pos = random.randint(20, max(20, height - 100))
+                if i == 0:
+                    stamp_filter = f"drawtext=text='{text}':fontcolor=lime@{opacity}:fontsize={fontsize}:x={x_pos}:y={y_pos}:box=1:boxcolor=black@0.2"
+                else:
+                    stamp_filter += f",drawtext=text='{text}':fontcolor=lime@{opacity}:fontsize={fontsize}:x={x_pos}:y={y_pos}:box=1:boxcolor=black@0.2"
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{stamp_filter}" -c:a copy -y "{output_path}"'''
+        
+        # Enhanced default fallback with random effects
+        text = random.choice(watermark_texts)
+        opacity = random.uniform(0.4, 0.8)
+        fontsize = random.randint(48, 96)
+        
+        # Random advanced positioning
+        positioning_styles = [
+            'x=(w-tw)/2:y=50',  # Top center
+            'x=(w-tw)/2:y=h-th-50',  # Bottom center
+            'x=50:y=(h-th)/2',  # Left center  
+            'x=w-tw-50:y=(h-th)/2',  # Right center
+            f'x={(width//4)}:y={(height//4)}',  # Custom position
+            'x=(w-tw)/2:y=(h-th)/2'  # Dead center
+        ]
+        
+        position = random.choice(positioning_styles)
+        
+        # Random color schemes
+        colors = ['white', 'yellow', 'cyan', 'lime', 'orange', 'red', 'magenta']
+        color = random.choice(colors)
+        
+        return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{text}':fontcolor={color}@{opacity}:fontsize={fontsize}:{position}:box=1:boxcolor=black@0.4:boxborderw=2" -c:a copy -y "{output_path}"'''
 
         # BALANCED HIGH VARIATION TRANSFORMATIONS (New aggressive effects with originality preservation)
     @staticmethod
@@ -1011,9 +1653,10 @@ class FFmpegTransformationService:
         manipulation_type = random.choice(['speed_variation', 'frame_select', 'micro_cuts'])
 
         if manipulation_type == 'speed_variation':
-            # Variable speed changes - more subtle
+            # Variable speed changes - more subtle with proper audio sync
             speed_factor = random.uniform(0.92, 1.08)  # BALANCED: was 0.8-1.2, now 0.92-1.08
-            return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed_factor}*PTS[v]" -map "[v]" -c:a copy -y "{output_path}"'
+            atempo_filter = FFmpegTransformationService.validate_atempo_value(speed_factor)
+            return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed_factor}*PTS[v];[0:a]{atempo_filter}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
 
         elif manipulation_type == 'frame_select':
             # Strategic frame selection - more conservative
@@ -1036,32 +1679,32 @@ class FFmpegTransformationService:
 
         if audio_type == 'eq_shift':
             # Multi-band EQ shifting - more conservative
-            low_gain = random.uniform(-2, 2)  # BALANCED: was more extreme
-            mid_gain = random.uniform(-1.5, 1.5)
-            high_gain = random.uniform(-2, 2)
+            low_gain = random.uniform(-1, 1)  # REDUCED: was ±2, now ±1
+            mid_gain = random.uniform(-0.8, 0.8)  # REDUCED: was ±1.5, now ±0.8
+            high_gain = random.uniform(-1, 1)  # REDUCED: was ±2, now ±1
             return f'ffmpeg -i "{input_path}" -af "equalizer=f=200:width_type=h:width=100:g={low_gain},equalizer=f=2000:width_type=h:width=500:g={mid_gain},equalizer=f=8000:width_type=h:width=2000:g={high_gain}" -c:v copy -y "{output_path}"'
 
         elif audio_type == 'phase_shift':
             # Stereo phase adjustment
-            phase_shift = random.uniform(-0.3, 0.3)  # BALANCED
+            phase_shift = random.uniform(-0.15, 0.15)  # REDUCED: was ±0.3, now ±0.15
             return f'ffmpeg -i "{input_path}" -af "aphaser=in_gain=0.4:out_gain=0.74:delay=3:decay=0.4:speed=0.5" -c:v copy -y "{output_path}"'
 
         else:  # stereo_adjust
             # Stereo width adjustment - subtle
-            width_factor = random.uniform(0.8, 1.2)  # BALANCED
+            width_factor = random.uniform(0.9, 1.1)  # REDUCED: was 0.8-1.2, now 0.9-1.1
             return f'ffmpeg -i "{input_path}" -af "aecho=0.8:0.88:6:0.4" -c:v copy -y "{output_path}"'
 
         # AUDIO TRANSFORMATIONS - BALANCED HIGH VARIATION VALUES (Preserving Audio Quality)
     @staticmethod
     def spectral_fingerprint_disruption(input_path: str, output_path: str) -> str:
-        """Spectral Fingerprint Match < 45% (BALANCED for variation while preserving audio quality)"""
-        pitch_shift = 1.0 + random.uniform(-0.08, 0.08)  # BALANCED: was ±0.12, now ±0.08
-        tempo_shift = 1.0 + random.uniform(-0.06, 0.06)  # BALANCED: was ±0.08, now ±0.06
-        bass_gain = random.uniform(-3, 3)  # BALANCED: was ±5, now ±3
-        treble_gain = random.uniform(-3, 3)  # BALANCED: was ±5, now ±3
+        """Spectral Fingerprint Match < 45% (REDUCED for better audio quality)"""
+        pitch_shift = 1.0 + random.uniform(-0.04, 0.04)  # REDUCED: was ±0.08, now ±0.04
+        tempo_shift = 1.0 + random.uniform(-0.03, 0.03)  # REDUCED: was ±0.06, now ±0.03
+        bass_gain = random.uniform(-1.5, 1.5)  # REDUCED: was ±3, now ±1.5
+        treble_gain = random.uniform(-1.5, 1.5)  # REDUCED: was ±3, now ±1.5
 
-        # BALANCED volume variation
-        volume_gain = random.uniform(-2, 2)  # BALANCED: was ±3, now ±2
+        # REDUCED volume variation
+        volume_gain = random.uniform(-1, 1)  # REDUCED: was ±2, now ±1
 
         rate_factor = pitch_shift
         tempo_compensation = tempo_shift / pitch_shift
@@ -1069,8 +1712,8 @@ class FFmpegTransformationService:
 
     @staticmethod
     def pitch_shift_transform(input_path: str, output_path: str) -> str:
-        """Pitch Shift ±6-8% (BALANCED for audio fingerprint breaking without distortion)"""
-        pitch_cents = random.uniform(-200, 200)  # BALANCED: was ±300, now ±200 (±2 semitones)
+        """Pitch Shift ±3-4% (REDUCED for audio quality without distortion)"""
+        pitch_cents = random.uniform(-100, 100)  # REDUCED: was ±200, now ±100 (±1 semitone)
         pitch_ratio = 2 ** (pitch_cents / 1200)
 
         rate_factor = pitch_ratio
@@ -1079,8 +1722,8 @@ class FFmpegTransformationService:
 
     @staticmethod
     def tempo_shift_transform(input_path: str, output_path: str) -> str:
-        """Tempo Shift ±4-6% (BALANCED for timing variation without noticeable change)"""
-        tempo_factor = 1.0 + random.uniform(-0.06, 0.06)  # BALANCED: was ±0.08, now ±0.06
+        """Tempo Shift ±2-3% (REDUCED for natural flow without noticeable change)"""
+        tempo_factor = 1.0 + random.uniform(-0.03, 0.03)  # REDUCED: was ±0.06, now ±0.03
 
         return f'ffmpeg -i "{input_path}" -af "atempo={tempo_factor}" -c:v copy -y "{output_path}"'
 
@@ -1101,31 +1744,31 @@ class FFmpegTransformationService:
                 except:
                     pass
 
-            noise_volume = random.uniform(0.002, 0.008)  # BALANCED: was 0.005-0.015, now 0.002-0.008
+            noise_volume = random.uniform(0.001, 0.003)  # REDUCED: was 0.002-0.008, now 0.001-0.003
             noise_types = ['pink', 'brown', 'white']
             noise_type = random.choice(noise_types)
 
             return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume=0.08[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
 
         except Exception:
-            gain_db = random.uniform(-1.5, 1.5)  # BALANCED: was ±3, now ±1.5
+            gain_db = random.uniform(-0.8, 0.8)  # REDUCED: was ±1.5, now ±0.8
             return f'ffmpeg -i "{input_path}" -af "volume={gain_db}dB" -c:v copy -y "{output_path}"'
 
     @staticmethod
     def audio_segment_reorder(input_path: str, output_path: str) -> str:
         """Audio Segment Reorder ≤ 10% of total audio (BALANCED for detection breaking)"""
-        offset = random.uniform(-0.3, 0.3)  # BALANCED: was ±0.5, now ±0.3
+        offset = random.uniform(-0.15, 0.15)  # REDUCED: was ±0.3, now ±0.15
 
         return f'ffmpeg -i "{input_path}" -itsoffset {offset} -i "{input_path}" -map 0:v -map 1:a -c:v copy -c:a aac -y "{output_path}"'
 
     @staticmethod
     def audio_simple_processing(input_path: str, output_path: str) -> str:
         """Enhanced Audio Processing - BALANCED for fingerprint disruption while preserving quality"""
-        bass_gain = random.uniform(-3, 3)  # BALANCED: was ±5, now ±3
-        treble_gain = random.uniform(-2.5, 2.5)  # BALANCED: was ±4, now ±2.5
-        volume_gain = random.uniform(-2, 2)  # BALANCED: was ±3, now ±2
+        bass_gain = random.uniform(-1.5, 1.5)  # REDUCED: was ±3, now ±1.5
+        treble_gain = random.uniform(-1.2, 1.2)  # REDUCED: was ±2.5, now ±1.2
+        volume_gain = random.uniform(-1, 1)  # REDUCED: was ±2, now ±1
 
-        mid_gain = random.uniform(-2, 2)  # BALANCED: was ±3, now ±2
+        mid_gain = random.uniform(-1, 1)  # REDUCED: was ±2, now ±1
 
         return f'ffmpeg -i "{input_path}" -af "equalizer=f=100:width_type=h:width=50:g={bass_gain},equalizer=f=1000:width_type=h:width=200:g={mid_gain},equalizer=f=8000:width_type=h:width=1000:g={treble_gain},volume={volume_gain}dB" -c:v copy -y "{output_path}"'
 
@@ -1336,13 +1979,13 @@ class FFmpegTransformationService:
         pan_x = random.uniform(0, crop_percent * 0.3)
         pan_y = random.uniform(0, crop_percent * 0.3)
 
-        return f'ffmpeg -i "{input_path}" -vf "crop=iw*(1-{crop_percent:.3f}):ih*(1-{crop_percent:.3f}):iw*{pan_x:.3f}:ih*{pan_y:.3f},scale=iw:ih" -c:a copy -y "{output_path}"'
+        return f'ffmpeg -i "{input_path}" -vf "crop=iw*(1-{crop_percent:.3f}):ih*(1-{crop_percent:.3f}):iw*{pan_x:.3f}:ih*{pan_y:.3f},scale=2*trunc(iw/2):2*trunc(ih/2)" -c:a copy -y "{output_path}"'
 
         # 5. AUDIO TRANSFORM (50% prob)
     @staticmethod
     def pitch_shift_transform_enhanced(input_path: str, output_path: str) -> str:
-        """Enhanced Pitch Shift - audio fingerprint breaking"""
-        pitch_cents = random.uniform(-80, 80)  # Subtle pitch change
+        """Enhanced Pitch Shift - audio fingerprint breaking (REDUCED)"""
+        pitch_cents = random.uniform(-40, 40)  # REDUCED: was ±80, now ±40
         pitch_ratio = 2 ** (pitch_cents / 1200)
 
         rate_factor = pitch_ratio
@@ -1351,38 +1994,172 @@ class FFmpegTransformationService:
 
     @staticmethod
     def tempo_shift_enhanced(input_path: str, output_path: str) -> str:
-        """Enhanced Tempo Shift - breaks audio timing patterns"""
-        tempo_factor = 1.0 + random.uniform(-0.03, 0.03)
+        """Enhanced Tempo Shift - breaks audio timing patterns (REDUCED)"""
+        tempo_factor = 1.0 + random.uniform(-0.015, 0.015)  # REDUCED: was ±0.03, now ±0.015
 
         return f'ffmpeg -i "{input_path}" -af "atempo={tempo_factor}" -c:v copy -y "{output_path}"'
 
     @staticmethod
     def add_ambient_noise_enhanced(input_path: str, output_path: str) -> str:
-        """Enhanced Ambient Noise - disrupts audio fingerprinting"""
+
+        """Enhanced Ambient Noise - Fixed audio fingerprinting disruption with multiple techniques"""
         try:
-            import subprocess
-            result = subprocess.run([
-                'ffprobe', '-v', 'quiet', '-show_entries', 
-                'format=duration', '-of', 'csv=p=0', input_path
-            ], capture_output=True, text=True)
-
-            duration = 10
+            # Get comprehensive audio properties
+            probe_cmd = [
+                'ffprobe', '-v', 'quiet', '-print_format', 'json',
+                '-show_format', '-show_streams', input_path
+            ]
+            result = subprocess.run(probe_cmd, capture_output=True, text=True)
+            
             if result.returncode == 0:
-                try:
-                    duration = float(result.stdout.strip())
-                except:
-                    pass
-
-            noise_volume = random.uniform(0.0005, 0.002)
-            noise_types = ['pink', 'brown', 'white']
-            noise_type = random.choice(noise_types)
-
-            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume=0.05[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
-
+                video_info = json.loads(result.stdout)
+                duration = float(video_info['format']['duration'])
+                
+                # Get audio stream info
+                audio_streams = [s for s in video_info['streams'] if s['codec_type'] == 'audio']
+                if audio_streams:
+                    audio_stream = audio_streams[0]
+                    sample_rate = int(audio_stream.get('sample_rate', 44100))
+                    channels = int(audio_stream.get('channels', 2))
+                else:
+                    sample_rate, channels = 44100, 2
+            else:
+                duration, sample_rate, channels = 30.0, 44100, 2
+                
         except Exception:
-            gain_db = random.uniform(-0.5, 0.5)
-            return f'ffmpeg -i "{input_path}" -af "volume={gain_db}dB" -c:v copy -y "{output_path}"'
-
+            duration, sample_rate, channels = 30.0, 44100, 2
+        
+        # Enhanced audio processing techniques
+        processing_types = [
+            'layered_ambient_noise',
+            'frequency_specific_noise', 
+            'dynamic_noise_modulation',
+            'spectral_noise_injection',
+            'harmonic_distortion',
+            'phase_shift_noise',
+            'multi_band_processing',
+            'temporal_noise_variation',
+            'psychoacoustic_masking'
+        ]
+        
+        processing_type = random.choice(processing_types)
+        
+        if processing_type == 'layered_ambient_noise':
+            # Multiple layers of different noise types
+            noise_types = ['pink', 'brown', 'white', 'blue', 'violet']
+            primary_noise = random.choice(noise_types)
+            secondary_noise = random.choice([n for n in noise_types if n != primary_noise])
+            
+            primary_volume = random.uniform(0.0001, 0.0008)
+            secondary_volume = random.uniform(0.0001, 0.0005)
+            mix_ratio = random.uniform(0.3, 0.7)
+            mix_ratio2 = 1.0 - mix_ratio  # Ensure weights sum to 1
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={primary_noise}:a={primary_volume}:r={sample_rate}" -f lavfi -i "anoisesrc=d={duration}:c={secondary_noise}:a={secondary_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume=0.03[a1];[2:a]volume=0.02[a2];[a1][a2]amix=inputs=2:duration=first:weights={mix_ratio:.3f} {mix_ratio2:.3f}[noise_mix];[a0][noise_mix]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -b:a 192k -y "{output_path}"'
+        
+        elif processing_type == 'frequency_specific_noise':
+            # Target specific frequency ranges - SIMPLIFIED
+            freq_ranges = [
+                (100, 500),    # Low frequencies
+                (500, 2000),   # Mid frequencies  
+                (2000, 8000),  # High frequencies
+                (8000, 16000)  # Very high frequencies
+            ]
+            
+            target_freq = random.choice(freq_ranges)
+            noise_type = random.choice(['pink', 'brown', 'white'])
+            noise_volume = random.uniform(0.0002, 0.0012)
+            center_freq = (target_freq[0] + target_freq[1]) // 2
+            width = target_freq[1] - target_freq[0]
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]bandpass=f={center_freq}:width_type=h:w={width},volume=0.04[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        elif processing_type == 'dynamic_noise_modulation':
+            # FIXED: Pre-calculate modulation values to avoid NaN
+            noise_type = random.choice(['pink', 'brown', 'white'])
+            base_volume = random.uniform(0.0003, 0.001)
+            modulation_freq = random.uniform(0.1, 2.0)
+            modulation_depth = random.uniform(0.3, 0.8)
+            
+            # Calculate static volume instead of dynamic expression
+            static_volume = 0.05 * (1 + modulation_depth * 0.5)  # Average modulation
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={base_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume={static_volume:.4f}[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        elif processing_type == 'spectral_noise_injection':
+            # SIMPLIFIED: Single frequency injection
+            noise_type = random.choice(['pink', 'brown'])
+            noise_volume = random.uniform(0.0002, 0.0008)
+            
+            # Single narrow band injection
+            freq1 = random.randint(200, 1000)
+            width1 = random.randint(50, 200)
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]bandpass=f={freq1}:width_type=h:w={width1},volume=0.02[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        elif processing_type == 'harmonic_distortion':
+            # SIMPLIFIED: Remove overdrive filter that might cause issues
+            noise_type = random.choice(['pink', 'brown'])
+            noise_volume = random.uniform(0.0001, 0.0006)
+            gain_adjust = random.uniform(0.98, 1.02)
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}:r={sample_rate}" -filter_complex "[0:a]volume={gain_adjust:.3f}[a0];[1:a]volume=0.025[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        elif processing_type == 'phase_shift_noise':
+            # SIMPLIFIED: Remove complex phase shifting
+            noise_type = random.choice(['white', 'pink'])
+            noise_volume = random.uniform(0.0002, 0.0009)
+            
+            if channels >= 2:
+                return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume=0.03[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+            else:
+                return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume=0.03[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        elif processing_type == 'multi_band_processing':
+            # SIMPLIFIED: Basic EQ instead of complex splitting
+            noise_volume = random.uniform(0.0003, 0.001)
+            eq_freq = random.choice([500, 1000, 2000, 4000])
+            eq_gain = random.uniform(-2, 2)
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c=brown:a={noise_volume}:r={sample_rate}" -filter_complex "[0:a]equalizer=f={eq_freq}:width_type=h:width=100:g={eq_gain:.2f}[a0];[1:a]volume=0.02[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        elif processing_type == 'temporal_noise_variation':
+            # FIXED: Use static volume switching at specific times
+            segment_duration = max(2.0, duration / random.randint(3, 8))
+            noise_type = random.choice(['pink', 'brown', 'white'])
+            volume1 = random.uniform(0.01, 0.03)
+            volume2 = random.uniform(0.02, 0.04)
+            
+            # Switch between two volumes at midpoint
+            switch_time = duration / 2
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a=0.0005:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume={volume1:.3f}:enable=\'between(t,0,{switch_time:.1f})\',volume={volume2:.3f}:enable=\'gte(t,{switch_time:.1f})\'[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        elif processing_type == 'psychoacoustic_masking':
+            # SIMPLIFIED: Basic frequency targeting
+            noise_type = random.choice(['pink', 'brown'])
+            noise_volume = random.uniform(0.0004, 0.0012)
+            masking_freq = random.randint(2000, 5000)
+            masking_width = random.randint(200, 800)
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={noise_type}:a={noise_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]bandpass=f={masking_freq}:width_type=h:w={masking_width},volume=0.018[a1];[a0][a1]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -y "{output_path}"'
+        
+        # Enhanced fallback with multiple noise sources - SIMPLIFIED
+        try:
+            primary_noise = random.choice(['pink', 'brown', 'white'])
+            secondary_noise = random.choice(['pink', 'brown', 'white'])
+            primary_volume = random.uniform(0.0002, 0.0008)
+            secondary_volume = random.uniform(0.0001, 0.0005)
+            
+            return f'ffmpeg -i "{input_path}" -f lavfi -i "anoisesrc=d={duration}:c={primary_noise}:a={primary_volume}:r={sample_rate}" -f lavfi -i "anoisesrc=d={duration}:c={secondary_noise}:a={secondary_volume}:r={sample_rate}" -filter_complex "[0:a]volume=1.0[a0];[1:a]volume=0.025[a1];[2:a]volume=0.015[a2];[a1][a2]amix=inputs=2:duration=first[noise_mix];[a0][noise_mix]amix=inputs=2:duration=first[aout]" -map 0:v -map "[aout]" -c:v copy -c:a aac -b:a 192k -y "{output_path}"'
+            
+        except Exception:
+            # Final fallback - VERY SIMPLE
+            gain_db = random.uniform(-0.2, 0.2)
+            eq_freq = random.choice([500, 1000, 2000])
+            eq_gain = random.uniform(-1, 1)
+            
+            return f'ffmpeg -i "{input_path}" -af "volume={gain_db:.2f}dB,equalizer=f={eq_freq}:width_type=h:width=500:g={eq_gain:.2f}" -c:v copy -c:a aac -y "{output_path}"'
         # 6. METADATA LAYER (100%) - ENHANCED FOR MAXIMUM SIMILARITY REDUCTION
     @staticmethod
     def ultra_metadata_randomization(input_path: str, output_path: str) -> str:
@@ -1614,22 +2391,345 @@ class FFmpegTransformationService:
 
     @staticmethod
     def subtle_logo_texture_overlay(input_path: str, output_path: str) -> str:
-        """4. Subtle Logo/Texture Overlay: 3-7% opacity corner watermark"""
-        opacity = random.uniform(0.03, 0.07)
-        texts = ['⊡', '◊', '▫', '○', '△', '▢', '◈', '⬟']  # Geometric symbols
-        text = random.choice(texts)
-
-        # Position in corner with very low opacity
-        positions = [
-            'x=10:y=10',
-            'x=w-tw-10:y=10', 
-            'x=10:y=h-th-10',
-            'x=w-tw-10:y=h-th-10'
+        """Enhanced Subtle Logo/Texture Overlay: Advanced multi-layer watermarking with dynamic patterns"""
+    
+        try:
+            # Get video properties for intelligent overlay placement
+            probe_cmd = [
+                'ffprobe', '-v', 'quiet', '-print_format', 'json',
+                '-show_format', '-show_streams', input_path
+            ]
+            result = subprocess.run(probe_cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                video_info = json.loads(result.stdout)
+                video_stream = next(s for s in video_info['streams'] if s['codec_type'] == 'video')
+                width = int(video_stream['width'])
+                height = int(video_stream['height'])
+                duration = float(video_info['format']['duration'])
+                fps = eval(video_stream.get('r_frame_rate', '24/1'))
+            else:
+                width, height, duration, fps = 1920, 1080, 30.0, 24.0
+                
+        except Exception:
+            width, height, duration, fps = 1920, 1080, 30.0, 24.0
+        
+        # Enhanced symbol collections
+        geometric_symbols = ['⊡', '◊', '▫', '○', '△', '▢', '◈', '⬟', '◯', '▽', '◇', '⬢', '⬡', '◐', '◑', '◒', '◓']
+        technical_symbols = ['⚡', '⚙', '⚛', '⚔', '⚊', '⚋', '⚌', '⚍', '⚎', '⚏', '⟐', '⟑', '⟒', '⟓', '⟔', '⟕']
+        brand_symbols = ['®', '©', '™', '℗', '℠', '⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨']
+        decorative_symbols = ['❋', '❊', '❉', '❈', '❇', '❆', '❅', '❄', '❃', '❂', '❁', '❀', '✿', '✾', '✽', '✼']
+        crypto_symbols = ['₿', '₹', '€', '$', '¥', '£', '₽', '₴', '₦', '₡', '₢', '₣', '₤', '₥', '₦', '₧']
+        
+        # Advanced overlay techniques
+        overlay_techniques = [
+            'multi_symbol_pattern',
+            'animated_corner_sequence',
+            'gradient_texture_overlay',
+            'fibonacci_spiral_pattern',
+            'dynamic_opacity_breathing',
+            'corner_constellation',
+            'edge_distributed_marks',
+            'temporal_symbol_rotation',
+            'layered_transparency_stack',
+            'mathematical_grid_pattern'
         ]
-        position = random.choice(positions)
-        fontsize = random.randint(16, 24)
-
-        return f'ffmpeg -i "{input_path}" -vf "drawtext=text=\'{text}\':fontcolor=white@{opacity}:fontsize={fontsize}:{position}" -c:a copy -y "{output_path}"'
+        
+        technique = random.choice(overlay_techniques)
+        
+        if technique == 'multi_symbol_pattern':
+            # Multiple symbols creating a subtle pattern
+            symbol_collections = [geometric_symbols, technical_symbols, brand_symbols, decorative_symbols]
+            selected_collection = random.choice(symbol_collections)
+            
+            symbols = random.sample(selected_collection, min(4, len(selected_collection)))
+            base_opacity = random.uniform(0.02, 0.06)
+            base_fontsize = random.randint(14, 28)
+            
+            pattern_filters = []
+            for i, symbol in enumerate(symbols):
+                corner_positions = [
+                    (20 + i*5, 20 + i*3),
+                    (width - 80 + i*3, 20 + i*5),
+                    (20 + i*4, height - 60 + i*2),
+                    (width - 60 + i*2, height - 80 + i*4)
+                ]
+                
+                x, y = random.choice(corner_positions)
+                opacity_var = base_opacity * random.uniform(0.7, 1.3)
+                size_var = base_fontsize + random.randint(-4, 4)
+                
+                pattern_filters.append(f"drawtext=text='{symbol}':fontcolor=white@{opacity_var:.4f}:fontsize={size_var}:x={x}:y={y}")
+            
+            filter_chain = ','.join(pattern_filters)
+            return f'''ffmpeg -i "{input_path}" -vf "{filter_chain}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'animated_corner_sequence':
+            # Animated sequence of symbols appearing/disappearing
+            symbol_collection = random.choice([geometric_symbols, technical_symbols, decorative_symbols])
+            symbols = random.sample(symbol_collection, min(6, len(symbol_collection)))
+            
+            opacity = random.uniform(0.03, 0.08)
+            fontsize = random.randint(18, 32)
+            corner = random.choice(['tl', 'tr', 'bl', 'br'])
+            
+            corner_positions = {
+                'tl': (15, 35),
+                'tr': (width - 50, 35),
+                'bl': (15, height - 25),
+                'br': (width - 50, height - 25)
+            }
+            
+            x, y = corner_positions[corner]
+            animation_speed = random.uniform(0.5, 2.0)
+            
+            # Cycle through symbols over time
+            symbol_cycle = '|'.join(symbols)
+            return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{random.choice(symbols)}':fontcolor=white@{opacity}:fontsize={fontsize}:x={x}:y={y}:enable='between(mod(t,{len(symbols)}),{0},{1})'" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'gradient_texture_overlay':
+            # Subtle gradient overlay with embedded symbols
+            symbol = random.choice(geometric_symbols + technical_symbols)
+            gradient_opacity = random.uniform(0.01, 0.04)
+            symbol_opacity = random.uniform(0.04, 0.09)
+            fontsize = random.randint(20, 40)
+            
+            # Create gradient in corner
+            corner = random.choice(['top', 'bottom', 'left', 'right'])
+            gradient_configs = {
+                'top': f"drawbox=x=0:y=0:w=w:h=h/6:color=black@{gradient_opacity}:t=fill",
+                'bottom': f"drawbox=x=0:y=5*h/6:w=w:h=h/6:color=black@{gradient_opacity}:t=fill",
+                'left': f"drawbox=x=0:y=0:w=w/6:h=h:color=black@{gradient_opacity}:t=fill",
+                'right': f"drawbox=x=5*w/6:y=0:w=w/6:h=h:color=black@{gradient_opacity}:t=fill"
+            }
+            
+            symbol_positions = {
+                'top': f"x=(w-tw)/2:y=30",
+                'bottom': f"x=(w-tw)/2:y=h-th-30",
+                'left': f"x=30:y=(h-th)/2",
+                'right': f"x=w-tw-30:y=(h-th)/2"
+            }
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{gradient_configs[corner]},drawtext=text='{symbol}':fontcolor=white@{symbol_opacity}:fontsize={fontsize}:{symbol_positions[corner]}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'fibonacci_spiral_pattern':
+            # Symbols placed along fibonacci spiral points
+            symbols = random.sample(geometric_symbols, min(5, len(geometric_symbols)))
+            base_opacity = random.uniform(0.025, 0.055)
+            base_fontsize = random.randint(12, 22)
+            
+            # Generate fibonacci spiral points
+            center_x, center_y = width // 4, height // 4  # Corner-biased center
+            spiral_filters = []
+            
+            for i, symbol in enumerate(symbols):
+                # Fibonacci spiral calculation
+                angle = i * 2.39996  # Golden angle in radians
+                radius = 20 + i * 15
+                
+                x = int(center_x + radius * math.cos(angle))
+                y = int(center_y + radius * math.sin(angle))
+                
+                # Ensure within bounds
+                x = max(10, min(width - 50, x))
+                y = max(25, min(height - 25, y))
+                
+                opacity_var = base_opacity * (1 + 0.2 * i)
+                size_var = base_fontsize + i * 2
+                
+                spiral_filters.append(f"drawtext=text='{symbol}':fontcolor=white@{opacity_var:.4f}:fontsize={size_var}:x={x}:y={y}")
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{','.join(spiral_filters)}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'dynamic_opacity_breathing':
+            # Breathing opacity effect with multiple symbols
+            symbols = random.sample(decorative_symbols, min(3, len(decorative_symbols)))
+            base_opacity = random.uniform(0.02, 0.05)
+            fontsize = random.randint(16, 30)
+            breathing_speed = random.uniform(0.3, 1.5)
+            
+            breathing_filters = []
+            for i, symbol in enumerate(symbols):
+                corner_positions = [
+                    (15, 25), (width - 40, 25), (15, height - 25), (width - 40, height - 25)
+                ]
+                x, y = corner_positions[i % len(corner_positions)]
+                
+                # Phase offset for each symbol
+                phase_offset = i * math.pi / 2
+                opacity_formula = f"{base_opacity}+{base_opacity*0.5}*sin(2*PI*{breathing_speed}*t+{phase_offset})"
+                
+                breathing_filters.append(f"drawtext=text='{symbol}':fontcolor=white@'{opacity_formula}':fontsize={fontsize}:x={x}:y={y}")
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{','.join(breathing_filters)}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'corner_constellation':
+            # Constellation-like pattern in one corner
+            symbols = random.sample(geometric_symbols + brand_symbols, min(8, len(geometric_symbols + brand_symbols)))
+            corner = random.choice(['tl', 'tr', 'bl', 'br'])
+            base_opacity = random.uniform(0.02, 0.06)
+            
+            corner_bounds = {
+                'tl': (10, 80, 10, 120),     # x_min, x_max, y_min, y_max
+                'tr': (width-80, width-10, 10, 120),
+                'bl': (10, 80, height-120, height-10),
+                'br': (width-80, width-10, height-120, height-10)
+            }
+            
+            x_min, x_max, y_min, y_max = corner_bounds[corner]
+            constellation_filters = []
+            
+            for i, symbol in enumerate(symbols):
+                x = random.randint(x_min, x_max)
+                y = random.randint(y_min, y_max)
+                opacity = base_opacity * random.uniform(0.5, 1.5)
+                fontsize = random.randint(10, 20)
+                
+                constellation_filters.append(f"drawtext=text='{symbol}':fontcolor=white@{opacity:.4f}:fontsize={fontsize}:x={x}:y={y}")
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{','.join(constellation_filters)}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'edge_distributed_marks':
+            # Symbols distributed along edges
+            symbols = random.sample(technical_symbols, min(6, len(technical_symbols)))
+            edge = random.choice(['top', 'bottom', 'left', 'right'])
+            base_opacity = random.uniform(0.03, 0.07)
+            fontsize = random.randint(14, 24)
+            
+            edge_filters = []
+            for i, symbol in enumerate(symbols):
+                if edge == 'top':
+                    x = 50 + i * (width - 100) // len(symbols)
+                    y = 25
+                elif edge == 'bottom':
+                    x = 50 + i * (width - 100) // len(symbols)
+                    y = height - 25
+                elif edge == 'left':
+                    x = 25
+                    y = 50 + i * (height - 100) // len(symbols)
+                else:  # right
+                    x = width - 25
+                    y = 50 + i * (height - 100) // len(symbols)
+                
+                opacity = base_opacity * random.uniform(0.8, 1.2)
+                edge_filters.append(f"drawtext=text='{symbol}':fontcolor=white@{opacity:.4f}:fontsize={fontsize}:x={x}:y={y}")
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{','.join(edge_filters)}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'temporal_symbol_rotation':
+            # Symbols that change over time
+            symbol_sets = [geometric_symbols, technical_symbols, decorative_symbols, brand_symbols]
+            selected_set = random.choice(symbol_sets)
+            symbols = random.sample(selected_set, min(4, len(selected_set)))
+            
+            opacity = random.uniform(0.03, 0.08)
+            fontsize = random.randint(18, 32)
+            rotation_speed = random.uniform(1.0, 4.0)  # symbols per second
+            
+            # Position in corner
+            positions = [(20, 30), (width-50, 30), (20, height-30), (width-50, height-30)]
+            x, y = random.choice(positions)
+            
+            # Create time-based symbol selection
+            symbol_duration = duration / len(symbols)
+            rotation_filters = []
+            
+            for i, symbol in enumerate(symbols):
+                start_time = i * symbol_duration
+                end_time = (i + 1) * symbol_duration
+                rotation_filters.append(f"drawtext=text='{symbol}':fontcolor=white@{opacity}:fontsize={fontsize}:x={x}:y={y}:enable='between(t,{start_time},{end_time})'")
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{','.join(rotation_filters)}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'layered_transparency_stack':
+            # Multiple overlapping transparent layers
+            symbols = random.sample(crypto_symbols + geometric_symbols, min(5, len(crypto_symbols + geometric_symbols)))
+            base_opacity = random.uniform(0.015, 0.04)
+            base_fontsize = random.randint(20, 45)
+            
+            # Stack symbols with slight offsets
+            center_x = random.choice([width//6, 5*width//6])  # Left or right side
+            center_y = random.choice([height//6, 5*height//6])  # Top or bottom side
+            
+            stack_filters = []
+            for i, symbol in enumerate(symbols):
+                offset_x = center_x + i * 3
+                offset_y = center_y + i * 2
+                layer_opacity = base_opacity * (1 - i * 0.1)  # Decreasing opacity
+                layer_size = base_fontsize - i * 3  # Decreasing size
+                
+                stack_filters.append(f"drawtext=text='{symbol}':fontcolor=white@{layer_opacity:.4f}:fontsize={layer_size}:x={offset_x}:y={offset_y}")
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{','.join(stack_filters)}" -c:a copy -y "{output_path}"'''
+        
+        elif technique == 'mathematical_grid_pattern':
+            # Grid-based mathematical pattern
+            symbols = random.sample(geometric_symbols, min(9, len(geometric_symbols)))
+            grid_size = 3  # 3x3 grid
+            opacity = random.uniform(0.02, 0.05)
+            fontsize = random.randint(12, 20)
+            
+            # Position grid in corner
+            corner = random.choice(['tl', 'tr', 'bl', 'br'])
+            grid_spacing = 25
+            
+            start_positions = {
+                'tl': (15, 25),
+                'tr': (width - 80, 25),
+                'bl': (15, height - 80),
+                'br': (width - 80, height - 80)
+            }
+            
+            start_x, start_y = start_positions[corner]
+            grid_filters = []
+            
+            for i in range(grid_size):
+                for j in range(grid_size):
+                    if i * grid_size + j < len(symbols):
+                        symbol = symbols[i * grid_size + j]
+                        x = start_x + j * grid_spacing
+                        y = start_y + i * grid_spacing
+                        symbol_opacity = opacity * random.uniform(0.7, 1.3)
+                        
+                        grid_filters.append(f"drawtext=text='{symbol}':fontcolor=white@{symbol_opacity:.4f}:fontsize={fontsize}:x={x}:y={y}")
+            
+            return f'''ffmpeg -i "{input_path}" -vf "{','.join(grid_filters)}" -c:a copy -y "{output_path}"'''
+        
+        # Enhanced default fallback with advanced positioning
+        symbol_collections = [geometric_symbols, technical_symbols, brand_symbols, decorative_symbols, crypto_symbols]
+        selected_collection = random.choice(symbol_collections)
+        symbol = random.choice(selected_collection)
+        
+        # Enhanced opacity and sizing
+        opacity = random.uniform(0.025, 0.085)  # Slightly higher than original
+        fontsize = random.randint(14, 35)  # Wider range
+        
+        # Advanced positioning with golden ratio
+        golden_ratio = 1.618
+        advanced_positions = [
+            f'x={int(width/golden_ratio)}:y={int(height/golden_ratio/2)}',  # Golden ratio position
+            f'x={int(width - width/golden_ratio)}:y={int(height/golden_ratio/2)}',
+            f'x={int(width/golden_ratio)}:y={int(height - height/golden_ratio/2)}',
+            f'x={int(width - width/golden_ratio)}:y={int(height - height/golden_ratio/2)}',
+            'x=15:y=25',  # Traditional corners
+            'x=w-tw-15:y=25',
+            'x=15:y=h-th-15',
+            'x=w-tw-15:y=h-th-15'
+        ]
+        
+        position = random.choice(advanced_positions)
+        
+        # Enhanced styling options
+        styling_options = [
+            f"fontcolor=white@{opacity}",
+            f"fontcolor=gray@{opacity*1.2}",
+            f"fontcolor=lightblue@{opacity*0.9}",
+            f"fontcolor=lightgreen@{opacity*1.1}"
+        ]
+        
+        style = random.choice(styling_options)
+        
+        return f'''ffmpeg -i "{input_path}" -vf "drawtext=text='{symbol}':${style}:fontsize={fontsize}:{position}:box=1:boxcolor=black@{opacity*0.3}:boxborderw=1" -c:a copy -y "{output_path}"'''
 
     @staticmethod
     def dynamic_zoom_oscillation(input_path: str, output_path: str, method: str = "scale") -> str:
@@ -1658,12 +2758,12 @@ class FFmpegTransformationService:
         
         try:
             if method == "scale":
-                # FIXED: Use scale + pad to ensure proper alignment
-                max_zoom = zoom_factor + oscillation_amplitude
+                # SAFER: Use simple static zoom instead of dynamic expressions
+                static_zoom = zoom_factor + (oscillation_amplitude / 2)  # Average zoom
                 
-                # Scale up to maximum size, then crop back to original to avoid alignment issues
-                scale_expr = f"scale='iw*({zoom_factor}+{oscillation_amplitude}*sin(2*PI*t/{oscillation_period}))':'ih*({zoom_factor}+{oscillation_amplitude}*sin(2*PI*t/{oscillation_period}))':eval=frame:flags=lanczos"
-                crop_expr = f"crop=iw/{max_zoom}:ih/{max_zoom}:(iw-iw/{max_zoom})/2:(ih-ih/{max_zoom})/2"
+                # Use simple scale and crop without time expressions
+                scale_expr = f"scale=iw*{static_zoom}:ih*{static_zoom}"
+                crop_expr = f"crop=iw/{static_zoom}:ih/{static_zoom}:(iw-iw/{static_zoom})/2:(ih-ih/{static_zoom})/2"
                 
                 # Combine scale and crop to maintain original dimensions
                 zoom_expr = f"{scale_expr},{crop_expr}"
@@ -1671,18 +2771,18 @@ class FFmpegTransformationService:
                 return f'ffmpeg -i "{input_path}" -vf "{zoom_expr}" -c:a copy -y "{output_path}"'
             
             elif method == "crop":
-                # SAFER: Use crop-based zoom instead of scale (no dimension changes)
+                # SAFER: Use crop-based zoom with static values instead of time expressions
                 # This zooms by cropping a smaller area and scaling it back to original size
-                crop_factor_expr = f"1/({zoom_factor}+{oscillation_amplitude}*sin(2*PI*t/{oscillation_period}))"
+                static_crop_factor = 1.0 / (zoom_factor + (oscillation_amplitude / 2))
                 
                 # Calculate crop dimensions that maintain aspect ratio
-                crop_w_expr = f"iw*({crop_factor_expr})"
-                crop_h_expr = f"ih*({crop_factor_expr})"
+                crop_w_expr = f"iw*{static_crop_factor}"
+                crop_h_expr = f"ih*{static_crop_factor}"
                 crop_x_expr = f"(iw-({crop_w_expr}))/2"
                 crop_y_expr = f"(ih-({crop_h_expr}))/2"
                 
                 # Crop then scale back to original size
-                zoom_expr = f"crop='{crop_w_expr}':'{crop_h_expr}':'{crop_x_expr}':'{crop_y_expr}':eval=frame,scale=iw:ih:flags=lanczos"
+                zoom_expr = f"crop={crop_w_expr}:{crop_h_expr}:{crop_x_expr}:{crop_y_expr},scale=iw:ih:flags=lanczos"
                 
                 return f'ffmpeg -i "{input_path}" -vf "{zoom_expr}" -c:a copy -y "{output_path}"'
             
@@ -1715,26 +2815,27 @@ class FFmpegTransformationService:
                         else:
                             fps = float(fps_str)
                     
-                    # Use zoompan with proper output size specification
-                    frames_per_period = oscillation_period * fps
-                    zoom_expr = f"zoompan=z='{zoom_factor}+{oscillation_amplitude}*sin(2*PI*on/{frames_per_period})':d=1:s=iw*ih"
+                    # Use zoompan with static zoom instead of oscillating
+                    static_zoom = zoom_factor + (oscillation_amplitude / 2)  # Average zoom
+                    zoom_expr = f"zoompan=z={static_zoom}:d=1:s=iw*ih"
                     
                     return f'ffmpeg -i "{input_path}" -vf "{zoom_expr}" -c:a copy -y "{output_path}"'
                     
                 except Exception as e:
-                    logging.warning(f"Zoompan method failed, falling back to crop method: {e}")
-                    # Fallback to crop method
-                    crop_factor = f"1/({zoom_factor}+{oscillation_amplitude}*sin(2*PI*t/{oscillation_period}))"
-                    zoom_expr = f"crop='iw*({crop_factor})':'ih*({crop_factor})':'(iw-iw*({crop_factor}))/2':'(ih-ih*({crop_factor}))/2':eval=frame,scale=iw:ih"
+                    logging.warning(f"Zoompan method failed, falling back to static crop method: {e}")
+                    # Fallback to static crop method
+                    static_zoom = zoom_factor + (oscillation_amplitude / 2)  # Average zoom
+                    crop_factor = 1.0 / static_zoom
+                    zoom_expr = f"crop=iw*{crop_factor}:ih*{crop_factor}:(iw-iw*{crop_factor})/2:(ih-ih*{crop_factor})/2,scale=iw:ih"
                     
                     return f'ffmpeg -i "{input_path}" -vf "{zoom_expr}" -c:a copy -y "{output_path}"'
             
             elif method == "simple":
-                # Simple method using crop (safest)
-                oscillation_hz = random.uniform(0.05, 0.2)
-                crop_factor = f"1/({zoom_factor}+{oscillation_amplitude}*sin(2*PI*{oscillation_hz}*t))"
+                # Simple method using static crop (safest)
+                static_zoom = zoom_factor + (oscillation_amplitude / 2)  # Average zoom
+                crop_factor = 1.0 / static_zoom
                 
-                zoom_expr = f"crop='iw*({crop_factor})':'ih*({crop_factor})':'(iw-iw*({crop_factor}))/2':'(ih-ih*({crop_factor}))/2':eval=frame,scale=iw:ih:flags=lanczos"
+                zoom_expr = f"crop=iw*{crop_factor}:ih*{crop_factor}:(iw-iw*{crop_factor})/2:(ih-ih*{crop_factor})/2,scale=iw:ih:flags=lanczos"
                 
                 return f'ffmpeg -i "{input_path}" -vf "{zoom_expr}" -c:a copy -y "{output_path}"'
             
@@ -1742,17 +2843,17 @@ class FFmpegTransformationService:
                 raise ValueError(f"Unknown method: {method}. Use: scale, crop, zoompan, or simple")
         
         except Exception as e:
-            # Ultimate fallback - very conservative crop-based zoom
-            logging.warning(f"Dynamic zoom method '{method}' failed, using safe crop fallback: {e}")
+            # Ultimate fallback - very conservative static zoom
+            logging.warning(f"Dynamic zoom method '{method}' failed, using safe static fallback: {e}")
             
-            # Conservative crop-based zoom (no dimension changes)
+            # Conservative static zoom (no time expressions)
             safe_zoom = 1.02
-            safe_amplitude = 0.008
-            safe_frequency = 0.08
+            crop_factor = 1.0 / safe_zoom
             
             # Simple crop that maintains original output dimensions
-            crop_factor = f"1/({safe_zoom}+{safe_amplitude}*sin(2*PI*{safe_frequency}*t))"
-            fallback_expr = f"crop='iw*({crop_factor})':'ih*({crop_factor})':'(iw-iw*({crop_factor}))/2':'(ih-ih*({crop_factor}))/2':eval=frame,scale=iw:ih"
+            fallback_expr = f"crop=iw*{crop_factor}:ih*{crop_factor}:(iw-iw*{crop_factor})/2:(ih-ih*{crop_factor})/2,scale=iw:ih"
+            
+            return f'ffmpeg -i "{input_path}" -vf "{fallback_expr}" -c:a copy -y "{output_path}"'
             
             return f'ffmpeg -i "{input_path}" -vf "{fallback_expr}" -c:a copy -y "{output_path}"'
 
@@ -1823,11 +2924,40 @@ class FFmpegTransformationService:
 
     @staticmethod
     def black_frames_transitions(input_path: str, output_path: str) -> str:
-        """Black Frames / Transitions - REDUCED duration"""
-        fade_duration = random.uniform(0.05, 0.15)  # REDUCED from 0.1-0.3
-        fade_in_start = random.uniform(0, 1)  # REDUCED from 0-2
-
-        return f'ffmpeg -i "{input_path}" -vf "fade=in:st={fade_in_start}:d={fade_duration},fade=out:st=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "{input_path}" | awk "{{print \\$1-{fade_duration}}}"):d={fade_duration}" -c:a copy -y "{output_path}"'
+        """Black Frames / Transitions - SAFE duration with bounds checking"""
+        try:
+            # Get video duration safely
+            video_info = FFmpegTransformationService.get_video_info_sync(input_path)
+            duration = video_info.get('duration', 10.0)
+            
+            # For very short videos, use a much safer approach
+            if duration < 0.5:
+                logging.info(f"Video too short ({duration}s) for fade transitions, using copy")
+                return f'ffmpeg -i "{input_path}" -c copy -y "{output_path}"'
+            
+            # Safe fade parameters with bounds checking
+            max_fade_duration = min(0.1, duration * 0.15)  # Max 15% of video or 0.1s
+            fade_duration = random.uniform(0.03, max_fade_duration)
+            
+            # Ensure fade_in_start is within valid bounds (very conservative)
+            max_fade_start = max(0, min(0.1, duration * 0.05))  # Max 5% of video start or 0.1s
+            fade_in_start = random.uniform(0, max_fade_start)
+            
+            # Calculate fade_out_start ensuring it's valid and positive
+            fade_out_start = max(fade_duration * 2, duration - fade_duration)
+            
+            # Double-check all values are positive and reasonable
+            fade_in_start = max(0, fade_in_start)
+            fade_out_start = max(fade_duration, fade_out_start)
+            fade_duration = max(0.03, min(fade_duration, duration * 0.3))
+            
+            logging.info(f"🎬 Fade transitions: in={fade_in_start:.3f}s, out={fade_out_start:.3f}s, duration={fade_duration:.3f}s")
+            
+            return f'ffmpeg -i "{input_path}" -vf "fade=in:st={fade_in_start:.3f}:d={fade_duration:.3f},fade=out:st={fade_out_start:.3f}:d={fade_duration:.3f}" -c:a copy -y "{output_path}"'
+            
+        except Exception as e:
+            logging.warning(f"Fade transitions failed, using copy: {e}")
+            return f'ffmpeg -i "{input_path}" -c copy -y "{output_path}"'
 
         # METADATA TRANSFORMATIONS - Keep same logic but reduce randomness
     @staticmethod
@@ -1949,8 +3079,9 @@ class FFmpegTransformationService:
     def temporal_shift_advanced(input_path: str, output_path: str) -> str:
         """Advanced temporal shift with REDUCED variable speed"""
         speed_factor = random.uniform(0.98, 1.02)  # REDUCED from 0.95-1.05
+        atempo_filter = FFmpegTransformationService.validate_atempo_value(speed_factor)
 
-        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed_factor}*PTS[v];[0:a]atempo={speed_factor}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
+        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed_factor}*PTS[v];[0:a]{atempo_filter}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
 
         # NEW ENHANCED TRANSFORMATIONS - REDUCED VALUES
     @staticmethod
@@ -2116,8 +3247,8 @@ class FFmpegTransformationService:
             return fallback_cmd
     @staticmethod
     def pitch_shift_semitones(input_path: str, output_path: str) -> str:
-        """Pitch shift audio ±1 semitone (REDUCED from ±2)"""
-        semitones = random.uniform(-1, 1)  # REDUCED from ±2
+        """Pitch shift audio ±0.5 semitone (REDUCED from ±1)"""
+        semitones = random.uniform(-0.5, 0.5)  # REDUCED from ±1
         pitch_ratio = 2 ** (semitones / 12)
 
         rate_factor = pitch_ratio
@@ -2183,9 +3314,9 @@ class FFmpegTransformationService:
     @staticmethod
     def multi_band_eq_randomization(input_path: str, output_path: str) -> str:
         """Multi-band EQ: REDUCED Low/Mid/High Gain: -3 to +3dB"""
-        low_gain = random.uniform(-3, 3)  # REDUCED from ±6dB
-        mid_gain = random.uniform(-3, 3)  # REDUCED from ±6dB
-        high_gain = random.uniform(-3, 3)  # REDUCED from ±6dB
+        low_gain = random.uniform(-1.5, 1.5)  # REDUCED from ±3dB
+        mid_gain = random.uniform(-1.5, 1.5)  # REDUCED from ±3dB
+        high_gain = random.uniform(-1.5, 1.5)  # REDUCED from ±3dB
         logging.info(f"🎛️ Multi-band EQ: Low={low_gain:.1f}dB, Mid={mid_gain:.1f}dB, High={high_gain:.1f}dB")
 
         return f'ffmpeg -i "{input_path}" -af "equalizer=f=100:width_type=h:width=50:g={low_gain},equalizer=f=1000:width_type=h:width=200:g={mid_gain},equalizer=f=8000:width_type=h:width=1000:g={high_gain}" -c:v copy -y "{output_path}"'
@@ -2260,18 +3391,18 @@ class FFmpegTransformationService:
 
     @staticmethod
     def echo_delay_variation(input_path: str, output_path: str) -> str:
-        """Echo Delay: REDUCED 50ms to 250ms delay, 15% to 40% decay"""
-        delay = random.uniform(0.05, 0.25)  # REDUCED from 0.1-0.5
-        decay = random.uniform(0.15, 0.4)  # REDUCED from 0.2-0.6
+        """Echo Delay: REDUCED 25ms to 125ms delay, 10% to 25% decay"""
+        delay = random.uniform(0.025, 0.125)  # REDUCED from 0.05-0.25
+        decay = random.uniform(0.1, 0.25)  # REDUCED from 0.15-0.4
         logging.info(f"🔊 Echo: delay={delay:.2f}s, decay={decay:.2f}")
 
         return f'ffmpeg -i "{input_path}" -af "aecho=0.8:0.9:{delay*1000:.0f}:{decay}" -c:v copy -y "{output_path}"'
 
     @staticmethod
     def audio_chorus_effect(input_path: str, output_path: str) -> str:
-        """Audio Chorus: REDUCED 1ms to 4ms delay, 0.05 to 0.2 depth"""
-        delay = random.uniform(1, 4)  # REDUCED from 2-8ms
-        depth = random.uniform(0.05, 0.2)  # REDUCED from 0.1-0.3
+        """Audio Chorus: REDUCED 0.5ms to 2ms delay, 0.02 to 0.1 depth"""
+        delay = random.uniform(0.5, 2)  # REDUCED from 1-4ms
+        depth = random.uniform(0.02, 0.1)  # REDUCED from 0.05-0.2
         logging.info(f"🎼 Chorus: delay={delay:.1f}ms, depth={depth:.2f}")
 
         # REDUCED chorus parameters
@@ -2279,26 +3410,27 @@ class FFmpegTransformationService:
 
     @staticmethod
     def dynamic_range_compression(input_path: str, output_path: str) -> str:
-        """Dynamic Range Compression: REDUCED Threshold -15 to -10dB, Ratio 2 to 4"""
-        threshold = random.uniform(-15, -10)  # REDUCED from -20 to -10dB
-        ratio = random.uniform(2, 4)  # REDUCED from 2-8
+        """Dynamic Range Compression: REDUCED Threshold -12 to -8dB, Ratio 1.5 to 2.5"""
+        threshold = random.uniform(-12, -8)  # REDUCED from -15 to -10dB
+        ratio = random.uniform(1.5, 2.5)  # REDUCED from 2-4
         logging.info(f"🗜️ Compression: threshold={threshold:.1f}dB, ratio={ratio:.1f}:1")
 
         return f'ffmpeg -i "{input_path}" -af "acompressor=threshold={threshold}dB:ratio={ratio}:attack=5:release=50" -c:v copy -y "{output_path}"'
 
     @staticmethod
     def audio_time_stretching(input_path: str, output_path: str) -> str:
-        """Audio Time Stretching: REDUCED Speed multiplier 0.95 to 1.05"""
-        speed = random.uniform(0.95, 1.05)  # REDUCED from 0.9-1.1
+        """Audio Time Stretching: REDUCED Speed multiplier 0.97 to 1.03"""
+        speed = random.uniform(0.97, 1.03)  # REDUCED from 0.95-1.05
         logging.info(f"⏱️ Audio time stretch: {speed:.3f}x speed")
 
-        return f'ffmpeg -i "{input_path}" -af "atempo={speed}" -c:v copy -y "{output_path}"'
+        atempo_filter = FFmpegTransformationService.validate_atempo_value(speed)
+        return f'ffmpeg -i "{input_path}" -af "{atempo_filter}" -c:v copy -y "{output_path}"'
 
     @staticmethod
     def voice_pattern_disruption(input_path: str, output_path: str) -> str:
         """REDUCED voice pattern masking"""
-        formant_shift = random.uniform(0.95, 1.05)  # REDUCED from 0.9-1.15
-        pitch_change = random.uniform(0.98, 1.02)  # REDUCED from 0.95-1.05
+        formant_shift = random.uniform(0.97, 1.03)  # REDUCED from 0.95-1.05
+        pitch_change = random.uniform(0.99, 1.01)  # REDUCED from 0.98-1.02
 
         logging.info(f"🗣️ Voice pattern disruption: formant={formant_shift:.3f}, pitch={pitch_change:.3f}")
 
@@ -2306,7 +3438,7 @@ class FFmpegTransformationService:
         tempo_compensation = 1.0 / rate_factor
 
         # REDUCED frequency filtering
-        freq_shift = (formant_shift - 1.0) * 500  # REDUCED from 1000
+        freq_shift = (formant_shift - 1.0) * 250  # REDUCED from 500
 
         return f'ffmpeg -i "{input_path}" -af "asetrate=44100*{rate_factor},atempo={tempo_compensation},afreqshift=shift={freq_shift}" -c:v copy -y "{output_path}"'
 
@@ -2340,7 +3472,8 @@ class FFmpegTransformationService:
         interval = random.uniform(8, 12)
         logging.info(f"📱 Instagram speed changes: {speed1:.3f}x then {speed2:.3f}x every {interval:.1f}s")
 
-        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed1}*PTS[v1];[0:a]atempo={speed1}[a1]" -map "[v1]" -map "[a1]" -y "{output_path}"'
+        atempo_filter = FFmpegTransformationService.validate_atempo_value(speed1)
+        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed1}*PTS[v1];[0:a]{atempo_filter}[a1]" -map "[v1]" -map "[a1]" -y "{output_path}"'
 
     @staticmethod
     def instagram_pitch_shift_segments(input_path: str, output_path: str) -> str:
@@ -2361,7 +3494,8 @@ class FFmpegTransformationService:
         speed = random.choice(speeds)
         logging.info(f"🎬 Frame interpolation speed: {speed}x")
 
-        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed}*PTS[v];[0:a]atempo={speed}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
+        atempo_filter = FFmpegTransformationService.validate_atempo_value(speed)
+        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed}*PTS[v];[0:a]{atempo_filter}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
 
     @staticmethod
     def instagram_rotation_micro(input_path: str, output_path: str) -> str:
@@ -2378,7 +3512,7 @@ class FFmpegTransformationService:
         crop_amount = random.randint(1, 10)  # REDUCED from 2-20px
         logging.info(f"📱 Instagram crop-resize: crop {crop_amount}px then resize")
 
-        return f'ffmpeg -i "{input_path}" -vf "crop=iw-{crop_amount*2}:ih-{crop_amount*2}:{crop_amount}:{crop_amount},scale=iw:ih" -c:a copy -y "{output_path}"'
+        return f'ffmpeg -i "{input_path}" -vf "crop=iw-{crop_amount*2}:ih-{crop_amount*2}:{crop_amount}:{crop_amount},scale=2*trunc(iw/2):2*trunc(ih/2)" -c:a copy -y "{output_path}"'
 
     @staticmethod
     def instagram_brightness_pulse(input_path: str, output_path: str) -> str:
@@ -2437,12 +3571,13 @@ class FFmpegTransformationService:
 
     @staticmethod
     def chromatic_aberration_effect(input_path: str, output_path: str) -> str:
-        """Chromatic Aberration: REDUCED -2px to +2px red/blue channel shift"""
+        """Chromatic Aberration: SAFE -1px to +1px red/blue channel shift with even dimensions"""
         red_shift = random.randint(-1, 1)  # REDUCED from ±3px
         blue_shift = random.randint(-1, 1)  # REDUCED from ±3px
         logging.info(f"🔴🔵 Chromatic aberration: red={red_shift}px, blue={blue_shift}px")
 
-        return f'ffmpeg -i "{input_path}" -vf "format=rgba,rgbashift=rh={red_shift}:bh={blue_shift},format=yuv420p" -c:a copy -y "{output_path}"'
+        # Ensure even dimensions for libx264 compatibility
+        return f'ffmpeg -i "{input_path}" -vf "format=rgba,rgbashift=rh={red_shift}:bh={blue_shift},scale=2*trunc(iw/2):2*trunc(ih/2),format=yuv420p" -c:a copy -y "{output_path}"'
 
     @staticmethod
     def selective_color_isolation(input_path: str, output_path: str) -> str:
@@ -2464,7 +3599,7 @@ class FFmpegTransformationService:
 
     @staticmethod
     def color_space_conversion(input_path: str, output_path: str) -> str:
-        """Robust Color Space Conversion: BT709, BT601, SMPTE240m, BT470bg"""
+        """Robust Color Space Conversion: BT709, BT601, SMPTE240m, BT470bg with even dimensions"""
         choices = [
             ("bt601-6-625", "bt709"),
             ("smpte240m", "bt601-6-625"),
@@ -2474,20 +3609,21 @@ class FFmpegTransformationService:
         iall, all_ = random.choice(choices)
         logging.info(f"🌈 Color space conversion: {iall} → {all_}")
 
-        return f'ffmpeg -i "{input_path}" -vf "colorspace=iall={iall}:all={all_}" -c:a copy -y "{output_path}"'
+        # Ensure even dimensions for colorspace filter compatibility
+        return f'ffmpeg -i "{input_path}" -vf "scale=2*trunc(iw/2):2*trunc(ih/2),colorspace=iall={iall}:all={all_}" -c:a copy -y "{output_path}"'
           
 
     @staticmethod
     def perspective_distortion(input_path: str, output_path: str) -> str:
-        """Perspective Distortion: REDUCED -2px to +2px keystone adjustments - Fixed to prevent black screen"""
+        """Perspective Distortion: SAFE -2px to +2px keystone adjustments with even dimensions"""
         x0 = random.randint(-2, 2)  # Further reduced from ±3px
         y0 = random.randint(-2, 2)  # Further reduced from ±3px
         x1 = random.randint(-2, 2)  # Further reduced from ±3px  
         y1 = random.randint(-2, 2)  # Further reduced from ±3px
         logging.info(f"📐 Perspective distortion: corners ({x0},{y0}) ({x1},{y1})")
 
-        # Use safer perspective coordinates that ensure the image remains visible
-        return f'ffmpeg -i "{input_path}" -vf "perspective={x0}:{y0}:W+{x1}:{y1}:{x0}:H+{y0}:W+{x1}:H+{y1}:interpolation=linear" -c:a copy -y "{output_path}"'
+        # Use safer perspective coordinates and ensure even dimensions
+        return f'ffmpeg -i "{input_path}" -vf "perspective={x0}:{y0}:W+{x1}:{y1}:{x0}:H+{y0}:W+{x1}:H+{y1}:interpolation=linear,scale=2*trunc(iw/2):2*trunc(ih/2)" -c:a copy -y "{output_path}"'
 
     @staticmethod
     def barrel_distortion(input_path: str, output_path: str) -> str:
@@ -2888,13 +4024,15 @@ class FFmpegTransformationService:
 
             # REDUCED speed variation
             speed_factor = random.choice([0.98, 0.99, 1.01, 1.02])  # REDUCED from [0.95, 0.98, 1.02, 1.05]
+            atempo_filter = FFmpegTransformationService.validate_atempo_value(speed_factor)
 
-            return f'ffmpeg -i "{input_path}" -vf "setpts={1/speed_factor}*PTS" -af "atempo={speed_factor}" -y "{output_path}"'
+            return f'ffmpeg -i "{input_path}" -vf "setpts={1/speed_factor}*PTS" -af "{atempo_filter}" -y "{output_path}"'
 
         except Exception:
             fps_adjustment = random.choice([0.99, 1.01])  # REDUCED from [0.98, 1.02]
+            atempo_filter = FFmpegTransformationService.validate_atempo_value(fps_adjustment)
 
-            return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/fps_adjustment}*PTS[v];[0:a]atempo={fps_adjustment}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
+            return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/fps_adjustment}*PTS[v];[0:a]{atempo_filter}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
 
     @staticmethod
     def complex_speed_patterns(input_path: str, output_path: str) -> str:
@@ -2902,7 +4040,8 @@ class FFmpegTransformationService:
         speeds = [0.98, 0.99, 1.01, 1.02]  # REDUCED from [0.97, 0.99, 1.01, 1.03]
         logging.info(f"⚡ Complex speed patterns: {speeds}")
         speed = random.choice(speeds)
-        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed}*PTS[v];[0:a]atempo={speed}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
+        atempo_filter = FFmpegTransformationService.validate_atempo_value(speed)
+        return f'ffmpeg -i "{input_path}" -filter_complex "[0:v]setpts={1/speed}*PTS[v];[0:a]{atempo_filter}[a]" -map "[v]" -map "[a]" -y "{output_path}"'
 
     @staticmethod
     def frame_micro_adjustments(input_path: str, output_path: str) -> str:
@@ -3222,7 +4361,8 @@ class FFmpegTransformationService:
 
                 elif blur_type == 'radial_blur':
                     # Radial blur simulation using unsharp (which supports timeline)
-                    blur_strength = random.uniform(1.0, 2.5)
+                    # Ensure blur_strength stays within valid range [-2, 5] for unsharp filter
+                    blur_strength = random.uniform(0.5, 1.9)  # Keep negative values within [-1.9, -0.5] range
 
                     enable_expressions = []
                     for start_time, blur_duration in blur_points:
@@ -3234,8 +4374,8 @@ class FFmpegTransformationService:
                     filter_expr = f"unsharp=5:5:-{blur_strength}:5:5:-{blur_strength}:enable='{combined_enable}'"
 
                 elif blur_type == 'zoom_blur':
-                    # FIXED: Use scale with timeline support instead of crop
-                    zoom_factor = random.uniform(1.02, 1.08)
+                    # FIXED: Use boxblur instead of scale for zoom blur effect
+                    blur_strength = random.uniform(1.5, 3.0)
 
                     enable_expressions = []
                     for start_time, blur_duration in blur_points:
@@ -3243,8 +4383,8 @@ class FFmpegTransformationService:
                         enable_expressions.append(f"between(t,{start_time:.2f},{end_time:.2f})")
 
                     combined_enable = "+".join(enable_expressions)
-                    # Use scale with conditional expression instead of crop
-                    filter_expr = f"scale='if({combined_enable},iw*{zoom_factor},iw)':'if({combined_enable},ih*{zoom_factor},ih)'"
+                    # Use boxblur with timeline support instead of problematic scale expressions
+                    filter_expr = f"boxblur={blur_strength}:{blur_strength}:enable='{combined_enable}'"
 
                 else:  # gaussian_blur
                     # Gaussian blur with timeline support
@@ -3332,7 +4472,7 @@ class FFmpegTransformationService:
             'visual': random.randint(2, 5),      # 2 to 5 visual transformations per variant
             'audio': 2,       # 2 audio transformations  
             'structural': 1,  # 1 structural transformation (reduced)
-            'metadata': 1,    # 1 metadata transformation
+            'metadata': 2,    # 2 metadata transformations (INCREASED from 1)
             'semantic': 1,    # 1 semantic transformation (reduced)
             'advanced': 1,    # 1 advanced transformation (reduced)
             'instagram': 1,   # 1 Instagram-specific transformation (NEW)
@@ -3384,6 +4524,136 @@ class FFmpegTransformationService:
         enhanced_count = len([t for t in selected if t.category == 'enhanced'])
         logging.info(f'   ✅ Enhanced transformations count: {enhanced_count}/5 minimum')
         logging.info(f'   🎬 Execution order: {[t.name for t in selected]}')
+        
+        return selected
+    
+    @staticmethod
+    def select_ssim_focused_transformations(min_count: int = 11) -> List[TransformationConfig]:
+        """Select transformations with priority on high-impact SSIM reduction strategies
+        
+        This method prioritizes SSIM reduction transformations to target SSIM < 0.30
+        while maintaining balanced quality and variation.
+        """
+        available = FFmpegTransformationService.get_transformations()
+        selected = []
+        
+        # Group transformations by category
+        categories = {}
+        for t in available:
+            if t.category not in categories:
+                categories[t.category] = []
+            categories[t.category].append(t)
+        
+        logging.info('🎯 Applying SSIM-Focused Transformation Strategy')
+        
+        # PHASE 1: MANDATORY SSIM REDUCTION STRATEGIES (3-4 transforms)
+        ssim_transforms = categories.get('ssim_reduction', [])
+        if ssim_transforms:
+            # Always include the ultra-high-impact combo transformation
+            combo_transform = next((t for t in ssim_transforms if 'combo' in t.name), None)
+            if combo_transform:
+                selected.append(combo_transform)
+                logging.info(f'   ⚡ MANDATORY: {combo_transform.name} (Ultra High Impact)')
+            
+            # Select 2-3 additional high-impact SSIM transformations
+            other_ssim = [t for t in ssim_transforms if t != combo_transform]
+            high_impact_ssim = [
+                t for t in other_ssim 
+                if any(keyword in t.name for keyword in ['enhanced_crop_zoom', 'aggressive_hue', 'contrast_brightness', 'aggressive_gaussian'])
+            ]
+            
+            ssim_count = random.randint(2, 3)
+            if len(high_impact_ssim) >= ssim_count:
+                selected.extend(random.sample(high_impact_ssim, ssim_count))
+            else:
+                selected.extend(high_impact_ssim)
+                remaining_needed = ssim_count - len(high_impact_ssim)
+                remaining_ssim = [t for t in other_ssim if t not in high_impact_ssim]
+                if remaining_ssim:
+                    selected.extend(random.sample(remaining_ssim, min(remaining_needed, len(remaining_ssim))))
+            
+            logging.info(f'   🎯 SSIM Reduction Count: {len([t for t in selected if t.category == "ssim_reduction"])}')
+        
+        # PHASE 2: ENHANCED ORB BREAKING (2-3 transforms)
+        orb_transforms = categories.get('orb_breaking', [])
+        if orb_transforms:
+            # Prioritize high-impact ORB transforms
+            enhanced_orb = [t for t in orb_transforms if 'enhanced' in t.name]
+            orb_count = random.randint(2, 3)
+            if len(enhanced_orb) >= orb_count:
+                selected.extend(random.sample(enhanced_orb, orb_count))
+            else:
+                selected.extend(enhanced_orb)
+                remaining_orb = [t for t in orb_transforms if t not in enhanced_orb]
+                remaining_needed = orb_count - len(enhanced_orb)
+                if remaining_orb and remaining_needed > 0:
+                    selected.extend(random.sample(remaining_orb, min(remaining_needed, len(remaining_orb))))
+            
+            logging.info(f'   🎨 ORB Breaking Count: {len([t for t in selected if t.category == "orb_breaking"])}')
+        
+        # PHASE 3: COMPLEMENTARY CATEGORIES (ensure balance)
+        complementary_requirements = {
+            'visual': random.randint(1, 2),    # Additional visual effects
+            'audio': 2,                        # Audio fingerprint breaking
+            'metadata': 2,                     # 2 metadata randomizations (INCREASED from 1)
+            'temporal': 1,                     # Temporal effects
+            'overlay': 1,                      # Overlay effects
+        }
+        
+        for category, count in complementary_requirements.items():
+            if category in categories:
+                available_in_category = [t for t in categories[category] if t not in selected]
+                if available_in_category:
+                    actual_count = min(count, len(available_in_category))
+                    selected.extend(random.sample(available_in_category, actual_count))
+        
+        # PHASE 4: Fill to target count with high-quality transforms
+        target_count = random.randint(min_count, min_count + 2)
+        remaining_needed = target_count - len(selected)
+        
+        if remaining_needed > 0:
+            # Prioritize high-probability transforms for the remaining slots
+            remaining_transforms = [t for t in available if t not in selected]
+            high_quality = [t for t in remaining_transforms if t.probability >= 0.6]
+            
+            if len(high_quality) >= remaining_needed:
+                selected.extend(random.sample(high_quality, remaining_needed))
+            else:
+                selected.extend(high_quality)
+                still_needed = remaining_needed - len(high_quality)
+                other_transforms = [t for t in remaining_transforms if t not in high_quality]
+                if other_transforms and still_needed > 0:
+                    selected.extend(random.sample(other_transforms, min(still_needed, len(other_transforms))))
+        
+        # Shuffle for random execution order
+        random.shuffle(selected)
+        
+        # Log final selection
+        logging.info(f'🎯 SSIM-Focused Strategy Summary (Total: {len(selected)}):')
+        
+        selected_by_category = {}
+        for t in selected:
+            if t.category not in selected_by_category:
+                selected_by_category[t.category] = []
+            selected_by_category[t.category].append(t.name)
+        
+        category_emojis = {
+            'ssim_reduction': '🎯',
+            'orb_breaking': '🎨', 
+            'visual': '👁️',
+            'audio': '🎵',
+            'metadata': '📋',
+            'temporal': '⏱️',
+            'overlay': '✨'
+        }
+        
+        for category, transforms in selected_by_category.items():
+            emoji = category_emojis.get(category, '📊')
+            logging.info(f'   {emoji} {category.upper()} ({len(transforms)}): {transforms}')
+        
+        ssim_count = len([t for t in selected if t.category == 'ssim_reduction'])
+        logging.info(f'   ⚡ High-Impact SSIM Reduction: {ssim_count} transforms')
+        logging.info(f'   🎯 Expected SSIM Target: < 0.30 (Ultra Effective)')
         
         return selected
     
@@ -3451,9 +4721,29 @@ class FFmpegTransformationService:
         logging.info(f'🎲 FULLY RANDOM TRANSFORMATION SELECTION: {num_transformations} transformations')
         logging.info(f'📊 Available transformation pool: {len(available)} total transformations')
         
-        # Completely random selection - no categories, no guarantees, no always-on
-        random.shuffle(available)  # Shuffle the entire pool
-        selected_configs = available[:num_transformations]  # Take first N after shuffle
+        # Group transformations by category for metadata guarantee
+        categories = {}
+        for t in available:
+            if t.category not in categories:
+                categories[t.category] = []
+            categories[t.category].append(t)
+        
+        # GUARANTEE at least 2 metadata transformations in every variant
+        selected_configs = []
+        metadata_transforms = categories.get('metadata', [])
+        if metadata_transforms:
+            # Select 2 random metadata transformations first
+            guaranteed_metadata = random.sample(metadata_transforms, min(2, len(metadata_transforms)))
+            selected_configs.extend(guaranteed_metadata)
+            logging.info(f'🔒 GUARANTEED METADATA: {[t.name for t in guaranteed_metadata]}')
+        
+        # Then select remaining transformations randomly from the rest
+        remaining_available = [t for t in available if t not in selected_configs]
+        remaining_needed = num_transformations - len(selected_configs)
+        
+        if remaining_needed > 0:
+            random.shuffle(remaining_available)
+            selected_configs.extend(remaining_available[:remaining_needed])
         
         # Log what was randomly selected
         selected_by_category = {}
@@ -3571,7 +4861,7 @@ class FFmpegTransformationService:
         supplementary_categories = {
             'audio': 2,      # 2 classic audio transformations
             'visual': 2,     # 2 classic visual transformations
-            'metadata': 1,   # 1 classic metadata transformation
+            'metadata': 2,   # 2 classic metadata transformations (INCREASED from 1)
             'enhanced': 2,   # 2 enhanced transformations
             'temporal': 1    # 1 temporal transformation
         }
@@ -3666,7 +4956,8 @@ class FFmpegTransformationService:
         input_path: str,
         output_path: str,
         progress_callback: Optional[Callable[[float], None]] = None,
-        variant_id: str = None
+        variant_id: str = None,
+        strategy: str = "random"  # "random", "ssim_focused", "seven_layer", "comprehensive_ssim"
     ) -> List[str]:
         """Apply video transformations with progress tracking and temporal distribution"""
         try:
@@ -3684,13 +4975,34 @@ class FFmpegTransformationService:
             # Ensure output directory exists
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             
-            # FULLY RANDOM TRANSFORMATION SELECTION - NO GUARANTEED TRANSFORMATIONS
-            # Each variant will get completely different transformations
-            selected_transformations = FFmpegTransformationService.select_fully_random_transformations(
-                num_transformations=random.randint(18, 30),  # MINIMUM 18: Ensured at least 18 transformations for maximum variation
-                video_duration=video_duration,
-                variant_seed=variant_id  # Use variant ID as seed for unique randomization
-            )
+            # STRATEGY-BASED TRANSFORMATION SELECTION
+            if strategy == "ssim_focused":
+                logging.info(f'🎯 Using SSIM-FOCUSED strategy for maximum structural similarity reduction')
+                selected_configs = FFmpegTransformationService.select_ssim_focused_transformations(min_count=11)
+                selected_transformations = [(config, None) for config in selected_configs]  # No temporal timing for focused strategy
+            elif strategy == "comprehensive_ssim":
+                logging.info(f'🎯 Using COMPREHENSIVE SSIM REDUCTION strategy from strategy table')
+                # Apply the comprehensive SSIM strategy directly
+                strategy_level = random.choice(["medium", "high", "extreme"])  # Random strategy level
+                result = FFmpegTransformationService.apply_comprehensive_ssim_strategy(input_path, output_path, strategy_level)
+                logging.info(f'🎯 COMPREHENSIVE SSIM STRATEGY COMPLETE: {result}')
+                return [result]
+            elif strategy == "seven_layer":
+                logging.info(f'🔴 Using 7-LAYER PIPELINE strategy')
+                # Keep existing seven_layer logic if it exists
+                selected_transformations = FFmpegTransformationService.select_fully_random_transformations(
+                    num_transformations=random.randint(18, 30),
+                    video_duration=video_duration,
+                    variant_seed=variant_id
+                )
+            else:  # "random" or default
+                logging.info(f'🎲 Using FULLY RANDOM strategy')
+                selected_transformations = FFmpegTransformationService.select_fully_random_transformations(
+                    num_transformations=random.randint(18, 30),  # MINIMUM 18: Ensured at least 18 transformations for maximum variation
+                    video_duration=video_duration,
+                    variant_seed=variant_id  # Use variant ID as seed for unique randomization
+                )
+            
             applied_transformations = []
             
             current_input = input_path
@@ -3699,7 +5011,11 @@ class FFmpegTransformationService:
             
             total_transformations = len(selected_transformations)
             
-            logging.info(f'🎯 FULLY RANDOM Transformation Plan ({total_transformations} total):')
+            strategy_emoji = ("🎯" if strategy == "ssim_focused" 
+                           else "🎯" if strategy == "comprehensive_ssim" 
+                           else "🔴" if strategy == "seven_layer" 
+                           else "🎲")
+            logging.info(f'{strategy_emoji} {strategy.upper()} Transformation Plan ({total_transformations} total):')
             for i, (transformation, timing_info) in enumerate(selected_transformations):
                 if timing_info:
                     logging.info(f'   {i+1}. {transformation.name} ({transformation.category}) - {timing_info}')
@@ -3998,7 +5314,7 @@ class FFmpegTransformationService:
                         "layer_2": "Audio Fingerprint Obfuscation (2-3 transforms)",
                         "layer_3": "SSIM & Structural Shift (1-2 transforms)",
                         "layer_4": "PHash Distance Increase (1-2 transforms)",
-                        "layer_5": "Metadata Scrambling (1-2 transforms)",
+                        "layer_5": "Metadata Scrambling (2-3 transforms)",
                         "layer_6": "Temporal Flow Disruption (1-2 transforms)",
                         "layer_7": "Semantic / Overlay Distortion (1-2 transforms)"
                     },
