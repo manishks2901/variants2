@@ -171,6 +171,45 @@ class AdvancedTransformationMetrics:
         return random.uniform(-0.3, 0.3)
 
 class FFmpegTransformationService:
+    @staticmethod
+    def slight_zoom(input_path: str, output_path: str) -> str:
+        """Slight zoom (scale=1.05)"""
+        return f'ffmpeg -i "{input_path}" -vf "scale=iw*1.05:ih*1.05,crop=iw:ih" -c:a copy -y "{output_path}"'
+
+    @staticmethod
+    def random_rotate(input_path: str, output_path: str) -> str:
+        """Random rotate (±5°)"""
+        angle = random.uniform(-5, 5)
+        return f'ffmpeg -i "{input_path}" -vf "rotate={angle}*PI/180:fillcolor=black" -c:a copy -y "{output_path}"'
+
+    @staticmethod
+    def faint_diagonal_texture_overlay(input_path: str, output_path: str) -> str:
+        """Add faint diagonal texture overlay"""
+        opacity = random.uniform(0.02, 0.06)
+        r_formula = f"r(X,Y)+{opacity}*abs(sin((X+Y)/20))*255"
+        g_formula = f"g(X,Y)+{opacity}*abs(sin((X+Y)/20))*255"
+        b_formula = f"b(X,Y)+{opacity}*abs(sin((X+Y)/20))*255"
+        return f'ffmpeg -i "{input_path}" -vf "geq=r=\'{r_formula}\':g=\'{g_formula}\':b=\'{b_formula}\'" -c:a copy -y "{output_path}"'
+
+    @staticmethod
+    def color_filter_hue(input_path: str, output_path: str) -> str:
+        """Apply color filter (hue=s=0 for grayscale)"""
+        return f'ffmpeg -i "{input_path}" -vf "hue=s=0" -c:a copy -y "{output_path}"'
+
+    @staticmethod
+    def flip_horizontal(input_path: str, output_path: str) -> str:
+        """Flip horizontal"""
+        return f'ffmpeg -i "{input_path}" -vf "hflip" -c:a copy -y "{output_path}"'
+
+    @staticmethod
+    def slight_blur_or_noise(input_path: str, output_path: str) -> str:
+        """Slight blur or noise"""
+        if random.random() < 0.5:
+            blur_strength = random.uniform(0.5, 1.2)
+            return f'ffmpeg -i "{input_path}" -vf "boxblur={blur_strength}:{blur_strength/2}" -c:a copy -y "{output_path}"'
+        else:
+            noise_strength = random.uniform(0.01, 0.03)
+            return f'ffmpeg -i "{input_path}" -vf "noise=alls={noise_strength}:allf=t" -c:a copy -y "{output_path}"'
     
     # ✅ STRATEGY: 7-LAYER TRANSFORMATION PIPELINE
     # Each layer targets specific similarity metrics for maximum entropy reduction
@@ -2435,12 +2474,8 @@ class FFmpegTransformationService:
         iall, all_ = random.choice(choices)
         logging.info(f"🌈 Color space conversion: {iall} → {all_}")
 
-        return (
-            f'ffmpeg -i "{input_path}" '
-            f'-vf "colorspace=iall={iall}:all={all_},format=yuv420p" '
-            f'-c:a copy -y "{output_path}"'
-        )
-
+        return f'ffmpeg -i "{input_path}" -vf "colorspace=iall={iall}:all={all_}" -c:a copy -y "{output_path}"'
+          
 
     @staticmethod
     def perspective_distortion(input_path: str, output_path: str) -> str:
@@ -3294,7 +3329,7 @@ class FFmpegTransformationService:
         
         # PHASE 2: Ensure we have representation from other categories
         guaranteed_per_category = {
-            'visual': 2,      # 2 visual transformations (reduced to make room for enhanced)
+            'visual': random.randint(2, 5),      # 2 to 5 visual transformations per variant
             'audio': 2,       # 2 audio transformations  
             'structural': 1,  # 1 structural transformation (reduced)
             'metadata': 1,    # 1 metadata transformation
@@ -3306,12 +3341,9 @@ class FFmpegTransformationService:
         
         for category, min_count in guaranteed_per_category.items():
             if category in categories:
-                # Shuffle and take the minimum required
                 category_transforms = categories[category].copy()
                 random.shuffle(category_transforms)
-                # Don't exceed the target by adding too many
-                available_slots = min_count
-                selected.extend(category_transforms[:available_slots])
+                selected.extend(category_transforms[:min_count])
         
         # PHASE 3: Add more random transformations to reach exactly 9-12 total
         target_count = random.randint(11, 12)  # Increased to accommodate enhanced transforms
