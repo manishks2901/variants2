@@ -1,0 +1,108 @@
+INDIVIDUAL TRANSFORMATION TEST REPORT
+==================================================
+
+Input Video: test_video.mp4
+Output Directory: test_results
+Total Transformations Tested: 16
+
+Successful: 13
+Failed: 3
+
+DETAILED RESULTS:
+------------------------------
+
+01. micro_perspective_warp_enhanced (orb_core)
+    Status: ✅ SUCCESS
+    File Size: 4288804 bytes
+    Has Video: True
+    Has Audio: True
+
+02. frame_jittering_enhanced (orb_core)
+    Status: ✅ SUCCESS
+    File Size: 4413385 bytes
+    Has Video: True
+    Has Audio: True
+
+03. dynamic_rotation_enhanced (orb_core)
+    Status: ❌ FAILED
+    Error: Transformation failed or output file not created
+
+04. line_sketch_filter_enhanced (orb_visual)
+    Status: ✅ SUCCESS
+    File Size: 7834085 bytes
+    Has Video: True
+    Has Audio: True
+
+05. phash_disruption_enhanced (orb_structured)
+    Status: ✅ SUCCESS
+    File Size: 4643070 bytes
+    Has Video: True
+    Has Audio: True
+
+06. ssim_reduction_controlled (orb_stability)
+    Status: ✅ SUCCESS
+    File Size: 4940416 bytes
+    Has Video: True
+    Has Audio: True
+
+07. ultra_metadata_randomization (orb_metadata)
+    Status: ✅ SUCCESS
+    File Size: 3717080 bytes
+    Has Video: True
+    Has Audio: True
+
+08. low_opacity_watermark_enhanced (orb_semantic)
+    Status: ✅ SUCCESS
+    File Size: 4415440 bytes
+    Has Video: True
+    Has Audio: True
+
+09. frequency_band_shifting (audio)
+    Status: ✅ SUCCESS
+    File Size: 3915643 bytes
+    Has Video: True
+    Has Audio: True
+
+10. dynamic_range_compression (audio)
+    Status: ✅ SUCCESS
+    File Size: 3920149 bytes
+    Has Video: True
+    Has Audio: True
+
+11. extreme_phash_disruption (visual)
+    Status: ✅ SUCCESS
+    File Size: 4504052 bytes
+    Has Video: True
+    Has Audio: True
+
+12. texture_blend_overlay (visual)
+    Status: ❌ FAILED
+    Error: Transformation failed or output file not created
+
+13. uuid_injection_system (metadata)
+    Status: ✅ SUCCESS
+    File Size: 3717013 bytes
+    Has Video: True
+    Has Audio: True
+
+14. noise_blur_regions (enhanced)
+    Status: ❌ FAILED
+    Error: Transformation failed or output file not created
+
+15. enhanced_ambient_layering (enhanced)
+    Status: ✅ SUCCESS
+    File Size: 4391623 bytes
+    Has Video: True
+    Has Audio: True
+
+16. random_overlay_effects (temporal)
+    Status: ✅ SUCCESS
+    File Size: 4401686 bytes
+    Has Video: True
+    Has Audio: True
+
+
+SUSPICIOUS TRANSFORMATIONS (Potential Black Video Culprits):
+--------------------------------------------------
+No obviously suspicious transformations found based on file size.
+Check the individual output videos manually for black frames.

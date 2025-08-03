@@ -65,22 +65,90 @@ class S3Service:
             logging.error(f"Unexpected error during S3 download: {e}")
             raise
     
+    def download_file_sync(self, s3_key: str, local_path: str) -> str:
+        """
+        Synchronous version of download_file for use in Celery workers
+        """
+        try:
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            
+            # Download from S3
+            self.s3_client.download_file(self.bucket_name, s3_key, local_path)
+            
+            return local_path
+            
+        except ClientError as e:
+            logging.error(f"Failed to download file from S3: {e}")
+            raise
+        except Exception as e:
+            logging.error(f"Unexpected error during S3 download: {e}")
+            raise
+    
     async def upload_processed_file(self, local_path: str, s3_key: str) -> str:
         """
         Upload processed file to S3
         """
         try:
+            # Check if local file exists
+            if not os.path.exists(local_path):
+                raise FileNotFoundError(f"Local file not found: {local_path}")
+            
+            # Log file size for debugging
+            file_size = os.path.getsize(local_path)
+            logging.info(f"📤 Uploading file to S3: {local_path} ({file_size} bytes) -> {s3_key}")
+            
             # Upload to S3
             self.s3_client.upload_file(local_path, self.bucket_name, s3_key)
+            
+            logging.info(f"✅ Successfully uploaded to S3: s3://{self.bucket_name}/{s3_key}")
             
             # Return S3 URL
             return f"s3://{self.bucket_name}/{s3_key}"
             
         except ClientError as e:
             logging.error(f"Failed to upload processed file to S3: {e}")
+            logging.error(f"   Local path: {local_path}")
+            logging.error(f"   S3 key: {s3_key}")
+            logging.error(f"   Bucket: {self.bucket_name}")
             raise
         except Exception as e:
             logging.error(f"Unexpected error during processed file S3 upload: {e}")
+            logging.error(f"   Local path: {local_path}")
+            logging.error(f"   S3 key: {s3_key}")
+            raise
+    
+    def upload_processed_file_sync(self, local_path: str, s3_key: str) -> str:
+        """
+        Synchronous version of upload_processed_file for use in Celery workers
+        """
+        try:
+            # Check if local file exists
+            if not os.path.exists(local_path):
+                raise FileNotFoundError(f"Local file not found: {local_path}")
+            
+            # Log file size for debugging
+            file_size = os.path.getsize(local_path)
+            logging.info(f"📤 Uploading file to S3: {local_path} ({file_size} bytes) -> {s3_key}")
+            
+            # Upload to S3
+            self.s3_client.upload_file(local_path, self.bucket_name, s3_key)
+            
+            logging.info(f"✅ Successfully uploaded to S3: s3://{self.bucket_name}/{s3_key}")
+            
+            # Return S3 URL
+            return f"s3://{self.bucket_name}/{s3_key}"
+            
+        except ClientError as e:
+            logging.error(f"Failed to upload processed file to S3: {e}")
+            logging.error(f"   Local path: {local_path}")
+            logging.error(f"   S3 key: {s3_key}")
+            logging.error(f"   Bucket: {self.bucket_name}")
+            raise
+        except Exception as e:
+            logging.error(f"Unexpected error during processed file S3 upload: {e}")
+            logging.error(f"   Local path: {local_path}")
+            logging.error(f"   S3 key: {s3_key}")
             raise
     
     async def generate_presigned_url(self, s3_key: str, expiration: int = 3600) -> str:

@@ -1,54 +1,118 @@
 version: '3.8'
 
 services:
-  redis:
-    image: redis:7-alpine
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: video-api-mongodb
+    restart: unless-stopped
     ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: video_variants
     volumes:
-      - redis_data:/data
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - video-api-network
 
+  # FastAPI Application
   api:
-    build: .
+    build: 
+      context: .
+      target: base
+    container_name: video-api-app
+    restart: unless-stopped
     ports:
       - "8000:8000"
     depends_on:
-      - redis
+      - mongodb
     environment:
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TEMP_DIR=/tmp/video-variants
+      - RESULTS_DIR=/app/results
     env_file:
       - .env
     volumes:
       - ./temp:/tmp/video-variants
+      - ./results:/app/results
+      - ./logs:/app/logs
+    networks:
+      - video-api-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # Celery Worker
   worker:
-    build: .
+    build: 
+      context: .
+      target: base
+    container_name: video-api-worker
+    restart: unless-stopped
     depends_on:
-      - redis
+      - mongodb
     environment:
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - TEMP_DIR=/tmp/video-variants
+      - RESULTS_DIR=/app/results
     env_file:
       - .env
     volumes:
       - ./temp:/tmp/video-variants
-    command: celery -A app.services.video_service.celery_app worker --loglevel=info --concurrency=2
+      - ./results:/app/results
+      - ./logs:/app/logs
+    networks:
+      - video-api-network
+    command: celery -A app.services.video_service.celery_app worker --loglevel=info --concurrency=2 -E
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.services.video_service.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # Celery Beat Scheduler
   beat:
-    build: .
+    build: 
+      context: .
+      target: base
+    container_name: video-api-beat
+    restart: unless-stopped
     depends_on:
-      - redis
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - mongodb
     env_file:
       - .env
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - video-api-network
     command: celery -A app.services.video_service.celery_app beat --loglevel=info
 
+  # Celery Flower (Optional - for monitoring)
+  flower:
+    build: 
+      context: .
+      target: base
+    container_name: video-api-flower
+    restart: unless-stopped
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env
+    networks:
+      - video-api-network
+    command: celery -A app.services.video_service.celery_app flower --port=5555
+
+# Networks
+networks:
+  video-api-network:
+    driver: bridge
+
+# Volumes
 volumes:
-  redis_data:
+  mongodb_data:
+    driver: local
