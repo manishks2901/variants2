@@ -4,6 +4,7 @@ import os
 import logging
 import uuid
 import sys
+import time
 from typing import Optional, Callable
 from decouple import config
 import pymongo
@@ -45,7 +46,10 @@ celery_app = Celery(
     include=['app.services.video_service']
 )
 
-# Celery configuration
+# Celery configuration with configurable timeouts
+TASK_TIMEOUT = int(config('CELERY_TASK_TIMEOUT', default='7200'))  # 2 hours default
+SOFT_TIMEOUT = int(config('CELERY_SOFT_TIMEOUT', default='6600'))  # 110 minutes default
+
 celery_app.conf.update(
     task_serializer='json',
     accept_content=['json'],
@@ -55,8 +59,8 @@ celery_app.conf.update(
     task_track_started=True,
     task_send_sent_event=True,  # Enable task sent events
     worker_send_task_events=True,  # Enable task events from worker
-    task_time_limit=30 * 60,  # 30 minutes
-    task_soft_time_limit=25 * 60,  # 25 minutes
+    task_time_limit=TASK_TIMEOUT,  # Configurable timeout (default: 2 hours)
+    task_soft_time_limit=SOFT_TIMEOUT,  # Configurable soft timeout (default: 110 minutes)
     worker_prefetch_multiplier=1,
     result_expires=3600,  # 1 hour
     worker_log_format='[%(asctime)s: %(levelname)s/%(processName)s] %(message)s',
@@ -141,7 +145,7 @@ class VideoProcessingService:
         self.temp_dir = config('TEMP_DIR', default='/tmp/video-variants')
         os.makedirs(self.temp_dir, exist_ok=True)
     
-    async def start_processing_task(self, job_id: str, variants_count: int = 1, strategy: str = "standard"):
+    async def start_processing_task(self, job_id: str, variants_count: int = 1, strategy: str = "enhanced_metrics"):
         """Start asynchronous video processing task for multiple variants"""
         try:
             # Send task to Celery worker with strategy parameter
@@ -170,7 +174,7 @@ class VideoProcessingService:
             raise
 
 @celery_app.task(bind=True)
-def process_video_task(self, job_id: str, variants_count: int = 1, strategy: str = "standard"):
+def process_video_task(self, job_id: str, variants_count: int = 1, strategy: str = "enhanced_metrics"):
     """
     Celery task for processing multiple video variants - uses sync operations
     """
@@ -184,6 +188,8 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, strategy: st
     """
     Synchronous function to process multiple video variants
     """
+    start_time = time.time()
+    
     # Get synchronous database connection
     db = get_sync_database()
     if db is None:
@@ -191,6 +197,13 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, strategy: st
     
     s3_service = S3Service()
     temp_dir = config('TEMP_DIR', default='/tmp/video-variants')
+    
+    # Log processing start with timeout info
+    logging.info(f"🚀 Starting video processing for job {job_id}")
+    logging.info(f"   📊 Variants requested: {variants_count}")
+    logging.info(f"   🎯 Strategy: {strategy}")
+    logging.info(f"   ⏰ Task timeout: {TASK_TIMEOUT}s ({TASK_TIMEOUT/60:.1f} minutes)")
+    logging.info(f"   ⚠️ Soft timeout: {SOFT_TIMEOUT}s ({SOFT_TIMEOUT/60:.1f} minutes)")
     
     try:
         # Update job status to processing
@@ -271,6 +284,18 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, strategy: st
                 update_progress(mapped_progress)
             
             try:
+                # Check remaining time before starting variant processing
+                elapsed_time = time.time() - start_time
+                remaining_time = SOFT_TIMEOUT - elapsed_time
+                
+                if remaining_time < 300:  # Less than 5 minutes left
+                    logging.warning(f"⚠️ Low time remaining for variant {variant_index + 1}: {remaining_time:.1f}s")
+                    if remaining_time < 60:  # Less than 1 minute
+                        logging.error(f"❌ Insufficient time remaining ({remaining_time:.1f}s), skipping variant {variant_index + 1}")
+                        continue
+                
+                logging.info(f"⏰ Starting variant {variant_index + 1} - Elapsed: {elapsed_time:.1f}s, Remaining: {remaining_time:.1f}s")
+                
                 # Apply transformations based on chosen strategy
                 if strategy == "seven_layer":
                     logging.info(f"🎯 Using 7-LAYER PIPELINE strategy for variant {variant_index + 1}")
@@ -279,6 +304,15 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, strategy: st
                         local_output_path,
                         variant_progress,
                         variant_id=f"{job_id}_variant_{variant_index + 1}"
+                    ))
+                elif strategy == "enhanced_metrics":
+                    logging.info(f"🎯 Using ENHANCED METRICS OPTIMIZATION strategy for variant {variant_index + 1}")
+                    applied_transformations = run_async_in_worker(FFmpegTransformationService.apply_transformations(
+                        local_input_path,
+                        local_output_path,
+                        variant_progress,
+                        variant_id=f"{job_id}_variant_{variant_index + 1}",
+                        strategy="enhanced_metrics"
                     ))
                 else:  # standard strategy
                     logging.info(f"🎲 Using STANDARD RANDOM strategy for variant {variant_index + 1}")
@@ -290,7 +324,13 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, strategy: st
                     ))
                 
                 # Log detailed transformation information
-                strategy_name = "7-LAYER PIPELINE" if strategy == "seven_layer" else "STANDARD RANDOM"
+                if strategy == "seven_layer":
+                    strategy_name = "7-LAYER PIPELINE"
+                elif strategy == "enhanced_metrics":
+                    strategy_name = "ENHANCED METRICS OPTIMIZATION"
+                else:
+                    strategy_name = "STANDARD RANDOM"
+                
                 logging.info(f"🎬 ===== VARIANT {variant_index + 1} TRANSFORMATION SUMMARY ({strategy_name}) =====")
                 logging.info(f"   🎯 Variant Seed: {unique_variant_seed}")
                 logging.info(f"   📊 Total transformations applied: {len(applied_transformations)}")
@@ -467,9 +507,12 @@ def _process_video_sync(task, job_id: str, variants_count: int = 1, strategy: st
             raise Exception("No variants were successfully processed")
         
         # ===== FINAL SUMMARY OF ALL VARIANTS =====
+        total_time = time.time() - start_time
         logging.info(f"🎉 ===== FINAL VARIANTS SUMMARY =====")
         logging.info(f"📋 Job ID: {job_id}")
         logging.info(f"🎬 Total variants created: {len(variants)}/{variants_count}")
+        logging.info(f"⏰ Total processing time: {total_time:.2f}s ({total_time/60:.1f} minutes)")
+        logging.info(f"⚡ Average time per variant: {total_time/len(variants):.2f}s")
         
         # Show transformation summary for all variants
         all_transformations_used = set()

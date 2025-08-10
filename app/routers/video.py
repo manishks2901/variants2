@@ -22,7 +22,7 @@ async def upload_video(
     variants_count: Optional[int] = Form(None),
     enable_punchlines: Optional[bool] = Form(False),
     punchline_variant: Optional[int] = Form(1),
-    strategy: Optional[str] = Form("standard")
+    strategy: Optional[str] = Form("enhanced_metrics")
 ):
     """
     Upload a video file and start processing job to generate multiple variations
@@ -57,7 +57,7 @@ async def upload_video(
             raise HTTPException(status_code=400, detail="Variations count must be between 1 and 10")
         
         # Validate strategy
-        valid_strategies = ["standard", "seven_layer"]
+        valid_strategies = ["standard", "seven_layer", "enhanced_metrics"]
         if strategy not in valid_strategies:
             raise HTTPException(
                 status_code=400, 
@@ -89,7 +89,15 @@ async def upload_video(
         video_service = VideoProcessingService()
         await video_service.start_processing_task(job.id, final_variants_count, strategy)
         
-        strategy_info = "standard random transformations" if strategy == "standard" else "7-layer pipeline (maximum similarity reduction)"
+        if strategy == "standard":
+            strategy_info = "standard random transformations"
+        elif strategy == "seven_layer":
+            strategy_info = "7-layer pipeline (maximum similarity reduction)"
+        elif strategy == "enhanced_metrics":
+            strategy_info = "enhanced metrics optimization (targets pHash<20, SSIM<0.20, ORB<3000, Audio<0.25, Metadata<0.30)"
+        else:
+            strategy_info = strategy
+            
         return UploadResponse(
             job_id=job.id,
             upload_url=upload_url,
@@ -103,7 +111,7 @@ async def upload_video(
 async def reprocess_video(
     job_id: str,
     variants_count: Optional[int] = 1,
-    strategy: Optional[str] = "standard"
+    strategy: Optional[str] = "enhanced_metrics"
 ):
     """
     Reprocess an existing video with different parameters
@@ -128,7 +136,7 @@ async def reprocess_video(
             raise HTTPException(status_code=400, detail="Variants count must be between 1 and 10")
         
         # Validate strategy
-        valid_strategies = ["standard", "seven_layer"]
+        valid_strategies = ["standard", "seven_layer", "enhanced_metrics"]
         if strategy not in valid_strategies:
             raise HTTPException(
                 status_code=400, 
